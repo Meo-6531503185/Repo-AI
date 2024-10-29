@@ -2,7 +2,7 @@ import streamlit as st
 
 def main():
     st.set_page_config(page_title="Pdf Reader", page_icon=":books:")
-    st.header="A Place where you can ask anything about your Pdf"
+    st.header=("A Place where you can ask anything about your Pdf")
     st.text_input("Ask anything")
     with st.sidebar:
         st.subheader("Your Documents")
