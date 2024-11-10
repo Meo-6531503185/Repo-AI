@@ -71,13 +71,10 @@ def get_vectorStores(text_chunks):
 def get_conversation_chain(vector_store):
     #llm = ChatOpenAI()
     #llm = HuggingFaceHub(repo_id="google/flan-t5-small", model_kwargs={"temperature":0.5, "max_length":512})
-    #credentials_path = "coderefactoringai-f44c582095c9.json"
-    #os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
     llm = VertexAI(
         project="coderefactoringai",
         location="us-central1",  # Common location for Vertex AI
         model="gemini-1.5-flash-002",  # Specify the Gemini model
-        #credentials=service_account.Credentials.from_service_account_file(credentials_path),
         model_kwargs={
             "temperature": 0.7,
             "max_length": 600,
