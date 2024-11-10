@@ -52,21 +52,15 @@ def get_textChuncks(extracted_text):
     return chunks
 
 def get_vectorStores(text_chunks):
+    #embeddings = OpenAIEmbeddings()
+    #embeddings = HuggingFaceEmbeddings(model_name="hkunlp/instructor-xl")
+    #embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     PROJECT_ID = "coderefactoringai"  
     LOCATION = "us-central1"  
     vertexai.init(project=PROJECT_ID, location=LOCATION)
     embeddings = VertexAIEmbeddings(model_name="text-embedding-004")
     vectorStore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vectorStore
-
-"""def get_vectorStores(text_chunks):
-    #embeddings = OpenAIEmbeddings()
-    embeddings = HuggingFaceEmbeddings(model_name="hkunlp/instructor-xl")
-    #embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    #embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-    vectorStore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
-    return vectorStore"""
-
 
 def get_conversation_chain(vector_store):
     #llm = ChatOpenAI()
