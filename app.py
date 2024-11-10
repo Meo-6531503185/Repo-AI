@@ -16,11 +16,22 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from htmlTemplates import css,bot_template,user_template
 from langchain_core.runnables import RunnableLambda
-from transformers import GPT2Tokenizer
+import google.generativeai as genai
+import requests
+import os
+import vertexai
+import google.auth 
+from google.auth.transport.requests import Request
+from google.oauth2 import service_account
+from langchain_google_vertexai import VertexAI
+from langchain_google_vertexai import VertexAIEmbeddings
+import google.generativeai as palm
+from langchain.embeddings import GooglePalmEmbeddings
+import google.auth
+credentials, project_id = google.auth.default()
+load_dotenv()
 
-
-
-#tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+st.set_page_config(page_title="Pdf Reader", page_icon=":books:")
 
 def extractText_Pdf(pdf_files):
     text=""
@@ -40,19 +51,42 @@ def get_textChuncks(extracted_text):
     chunks = text_splitter.split_text(extracted_text)
     return chunks
 
-def get_vectorStores(text_chuncks):
-    # embeddings = OpenAIEmbeddings()
+def get_vectorStores(text_chunks):
+    PROJECT_ID = "coderefactoringai"  
+    LOCATION = "us-central1"  
+    vertexai.init(project=PROJECT_ID, location=LOCATION)
+    embeddings = VertexAIEmbeddings(model_name="text-embedding-004")
+    vectorStore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
+    return vectorStore
+
+"""def get_vectorStores(text_chunks):
+    #embeddings = OpenAIEmbeddings()
     embeddings = HuggingFaceEmbeddings(model_name="hkunlp/instructor-xl")
     #embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     #embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-    vectorStore = FAISS.from_texts(texts=text_chuncks, embedding=embeddings)
-    return vectorStore
+    vectorStore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
+    return vectorStore"""
+
 
 def get_conversation_chain(vector_store):
     #llm = ChatOpenAI()
     #llm = HuggingFaceHub(repo_id="google/flan-t5-small", model_kwargs={"temperature":0.5, "max_length":512})
-    
-    llm = HuggingFaceHub(
+    credentials_path = "pdfreader-440110-3ea52824b232.json"
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
+    llm = VertexAI(
+        project="pdfreader-440110",
+        location="us-central1",  # Common location for Vertex AI
+        model="gemini-1.5-flash-002",  # Specify the Gemini model
+        credentials=service_account.Credentials.from_service_account_file(credentials_path),
+        model_kwargs={
+            "temperature": 0.7,
+            "max_length": 600,
+            "top_p": 0.95,
+            "top_k": 50
+        }
+    )
+
+    """llm = HuggingFaceHub(
         repo_id="google/flan-t5-base", 
         model_kwargs={ 
         "temperature": 0.6,
@@ -60,7 +94,7 @@ def get_conversation_chain(vector_store):
         "top_p": 0.9,
         "top_k": 50
         }
-    )
+    )"""
     memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
     conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
@@ -71,9 +105,6 @@ def get_conversation_chain(vector_store):
 
 
 def handle_userinput(user_question):
-    
-    """input_tokens = tokenizer.encode(user_question, return_tensors='pt').shape[1]
-    max_new_tokens = max(0, 1024 - input_tokens)  # Calculate max_new_tokens based on input length"""
 
     response = st.session_state.conversation({'question': user_question})
     #st.write(response)
@@ -89,8 +120,6 @@ def handle_userinput(user_question):
 
 
 def main():
-    load_dotenv()
-    st.set_page_config(page_title="Pdf Reader", page_icon=":books:")
 
     st.write(css, unsafe_allow_html=True)
 
@@ -115,15 +144,14 @@ def main():
             with st.spinner("Reading"):
                 extracted_text = extractText_Pdf(pdf_files)
                 
-                text_chuncks = get_textChuncks(extracted_text)
+                text_chunks = get_textChuncks(extracted_text)
                 
-                vector_store = get_vectorStores(text_chuncks)
+                vector_store = get_vectorStores(text_chunks)
                 
-                #retriever = RunnableLambda(vector_store.similarity_search).bind(k=1)  # select top result
-                #st.write(retriever.batch(["GPA", "volunteer"]))
-
-                st.session_state.conversation = get_conversation_chain(vector_store)
-
+                if vector_store is None:
+                    st.error("Failed to create embeddings. Please check your input data.")
+                else:
+                    st.session_state.conversation = get_conversation_chain(vector_store)
 
 
 if __name__ == "__main__":  

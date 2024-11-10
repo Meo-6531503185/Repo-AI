@@ -1,0 +1,3 @@
+pip install google-auth google-auth-oauthlib google-cloud-aiplatform langchain
+pip install -U langchain-google-vertexai
+
