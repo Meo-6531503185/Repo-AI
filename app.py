@@ -77,15 +77,15 @@ def get_conversation_chain(vector_store):
         }
     )
 
-    """llm = HuggingFaceHub(
-        repo_id="google/flan-t5-base", 
-        model_kwargs={ 
-        "temperature": 0.6,
-        "max_length": 100,
-        "top_p": 0.9,
-        "top_k": 50
-        }
-    )"""
+    #llm = HuggingFaceHub(
+    #   repo_id="google/flan-t5-base", 
+    #  model_kwargs={ 
+    #    "temperature": 0.6,
+    #    "max_length": 100,
+    #    "top_p": 0.9,
+    #    "top_k": 50
+    #    }
+    #)
     memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
     conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,

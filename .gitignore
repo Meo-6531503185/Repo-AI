@@ -16,7 +16,4 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-#Ignore json file
-coderefactoringai-f44c582095c9.json
-pdfreader-440110-3ea52824b232.json
 
