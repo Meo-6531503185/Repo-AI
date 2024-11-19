@@ -28,8 +28,6 @@ from langchain_google_vertexai import VertexAIEmbeddings
 import google.generativeai as palm
 from langchain.embeddings import GooglePalmEmbeddings
 import google.auth
-
-
 credentials, project_id = google.auth.default()
 load_dotenv()
 
@@ -69,8 +67,8 @@ def get_conversation_chain(vector_store):
     #llm = HuggingFaceHub(repo_id="google/flan-t5-small", model_kwargs={"temperature":0.5, "max_length":512})
     llm = VertexAI(
         project="coderefactoringai",
-        location="us-central1",  
-        model="gemini-1.5-flash-002",  
+        location="us-central1",  # Common location for Vertex AI
+        model="gemini-1.5-flash-002",  # Specify the Gemini model
         model_kwargs={
             "temperature": 0.7,
             "max_length": 600,
