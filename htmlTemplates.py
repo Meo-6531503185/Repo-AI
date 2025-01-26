@@ -1,44 +1,73 @@
 css = '''
 <style>
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1.5rem;
+}
+
+/* Message container for user */
+.chat-container.user {
+    align-items: flex-end;
+}
+
+/* Message container for bot */
+.chat-container.bot {
+    align-items: flex-start;
+}
+
+/* Shared styles for chat message bubbles */
 .chat-message {
-    padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1rem; display: flex
+    max-width: 70%;
+    padding: 1rem;
+    border-radius: 1rem;
+    margin-bottom: 0.5rem;
+    color: #fff;
+    font-size: 1rem;
+    line-height: 1.5;
 }
-.chat-message.user {
-    background-color: #475063
+
+/* User-specific styles */
+.chat-container.user .chat-message {
+    background-color: #475063;
+    border-bottom-right-radius: 0;
 }
-.chat-message.bot {
-    background-color: #2b313e
+
+/* Bot-specific styles */
+.chat-container.bot .chat-message {
+    background-color: #2b313e;
+    border-bottom-left-radius: 0;
 }
-.chat-message .avatar {
-  width: 20%;
+
+/* Avatar container */
+.avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0.5rem;
 }
-.chat-message .avatar img {
-  max-width: 78px;
-  max-height: 78px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.chat-message .message {
-  width: 80%;
-  padding: 0 1.5rem;
-  color: #fff;
-}
-'''
+
+/* Avatar image styles */
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}'''
 
 bot_template = '''
-<div class="chat-message bot">
+<div class="chat-container bot">
     <div class="avatar">
-        <img src="https://attic.sh/sbzbay0b71yq9x7qjlmxkfex0qmv" style="max-height: 78px; max-width: 78px; border-radius: 50%; object-fit: cover;">
+        <img src="https://attic.sh/sbzbay0b71yq9x7qjlmxkfex0qmv" alt="Bot Avatar">
     </div>
-    <div class="message">{{MSG}}</div>
+    <div class="chat-message">{{MSG}}</div>
 </div>
 '''
 
 user_template = '''
-<div class="chat-message user">
+<div class="chat-container user">
+    <div class="chat-message">{{MSG}}</div>
     <div class="avatar">
-        <img src=https://attic.sh/s2vjio0pzc50u1xxtirdfx26nuc5>
-    </div>    
-    <div class="message">{{MSG}}</div>
-</div>
-'''
+        <img src="https://attic.sh/s2vjio0pzc50u1xxtirdfx26nuc5" alt="User Avatar">
+    </div>
+</div>'''
