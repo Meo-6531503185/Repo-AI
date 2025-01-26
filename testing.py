@@ -25,16 +25,20 @@ from sentence_transformers import SentenceTransformer
 
 test_data = [
     {
-        "question": "What does the repoReader.py do?",
-        "expected_answer": "repoReader.py is a Streamlit application that allows users to upload a GitHub repository URL, extract its Python code, create embeddings using Vertex AI, and then ask questions about the code's content. The application uses Langchain to build a conversational retrieval chain, enabling a question-and-answer interface with the repository's codebase."
+        "question": "What is the purpose of this repository?",
+        "expected_answer": "The purpose of this repository is to provide a tool for interacting with code repositories and PDF documents. It allows users to upload a GitHub repository or PDF files, extract and process the content (e.g., Python code or text), create vector embeddings using Vertex AI, and facilitate question-answering through a conversational interface. The application leverages Langchain for document processing, embeddings, and retrieval, enabling users to ask specific questions about the content of the repository or PDF."
+    },
+    {
+        "question": "What does repoReader.py do?",
+        "expected_answer": "The repoReader is a Streamlit application that allows users to upload a GitHub repository URL, extract Python code, and generate embeddings using Vertex AI. It splits the code into smaller chunks, stores them in a vector store, and enables users to interact with the repository through a conversational interface."
+    },
+    {
+        "question": "How many programming languages are in this repository?",
+        "expected_answer": "This repository uses only Python"
     },
     {
         "question": "Explain the functions inside the repoReader.py",
-        "expected_answer": "The provided code contains the following functions: main(): This is the main function that runs the Streamlit application. It handles user interface elements, user input, and calls other functions to process data. generate_repo_path(url): Extracts the repository name from a given GitHub URL and constructs a local file path. get_parsedDocuments(repo_url): Clones a GitHub repository, loads Python files using GenericLoader and LanguageParser, and returns a list of documents. get_splittedContents(documents): Splits the loaded documents into smaller chunks using RecursiveCharacterTextSplitter. get_vectorStores(texts): Creates a vector store using Vertex AI embeddings and FAISS from a list of text chunks. handle_userinput(user_question): Processes user input, invokes the conversation chain, and displays the conversation history using HTML templates. extractText_Pdf(pdf_files): Extracts text from multiple PDF files. get_textChuncks(extracted_text): Splits extracted text into chunks using CharacterTextSplitter. get_conversation_chain(vector_store): Creates a ConversationalRetrievalChain using a specified LLM (VertexAI in this case), retriever, and memory. There are two versions of this function present"
-    },
-    {
-        "question": "What does htmlTemplates.py do?",
-        "expected_answer": "The provided code shows that htmlTemplates.py contains the css, bot_template, and user_template variables. These are used to define the HTML and CSS styling for the chat interface in the Streamlit application."
+        "expected_answer": "The repoReader.py is a Streamlit application designed to read and interact with GitHub repositories. Here's an explanation of its key functions: generate_repo_path(url): Takes a GitHub repository URL, extracts the repository name, and generates a local path where the repository will be cloned. get_parsedDocuments(repo_url): Clones the GitHub repository to the generated path. Uses the GenericLoader to parse Python files (.py) and return documents. get_splittedContents(documents): Splits the parsed Python documents into smaller chunks using RecursiveCharacterTextSplitter to ensure the documents are manageable for embedding. get_vectorStores(texts): Uses VertexAI to initialize an embedding model, creates embeddings from the split document texts, and stores them in a FAISS vector store for fast retrieval. handle_userinput(user_question): Handles the user input question, invokes the conversation chain to retrieve the answer, and displays the conversation history in the app. get_conversation_chain(vector_store): Creates a retrieval-based conversational chain using the vector store, VertexAI for model-based responses, and memory to maintain the context of the conversation."
     }
 ]
 
@@ -49,33 +53,37 @@ def calculate_similarity(expected, generated):
     similarity = cosine_similarity([embeddings[0]], [embeddings[1]])[0][0]
     return similarity
 
-def evaluate_answers(conversation_chain, test_cases):
-    results = []
-    for test in test_cases:
+def get_generatedResponse(question, conversation_chain):
+    chat_history = conversation_chain.memory.chat_memory.messages
+
+    for i in range(0, len(chat_history), 2):  # Iterate through user messages
+        if chat_history[i].content.strip() == question:  # Match user question
+            # Return the corresponding bot response
+            return chat_history[i + 1].content.strip() if i + 1 < len(chat_history) else None
+    return None
+
+def evaluate_answers(conversation_chain, test_data, user_question):
+
         # Get the generated answer from the conversation chain
-        response = conversation_chain.invoke({"question": test["question"]})
-        generated_answer = response["chat_history"][-1].content.strip()
+        generated_response = get_generatedResponse(user_question, conversation_chain)
+        expected_response = None  # Default to None if no match is found
 
+
+        matching_test_case = next((test for test in test_data if test["question"] == user_question), None)
+
+        if matching_test_case:
+            expected_response = matching_test_case["expected_answer"] 
         # Calculate similarity
-        similarity_score = calculate_similarity(test["expected_answer"], generated_answer)
+        similarity_score = calculate_similarity(expected_response, generated_response)
 
-        # Log the result
-        result = {
-            "question": test["question"],
-            "expected": test["expected_answer"],
-            "generated": generated_answer,
-            "similarity_score": similarity_score
-        }
-        results.append(result)
 
         # Print the result to the terminal
-        print("Question:", result["question"])
-        print("Expected Answer:", result["expected"])
-        print("Generated Answer:", result["generated"])
-        print("Similarity Score:", f"{result['similarity_score']:.2f}")
+        print("Question:", user_question)
+        print("Expected Answer:", expected_response)
+        print("Generated Answer:", generated_response)
+        print("Similarity Score:", similarity_score)
         print("-" * 50)  # Separator for readability
 
-    return results
 
 
 def generate_repo_path(url, custom_path):
@@ -96,7 +104,7 @@ def get_parsed_documents(repo_url, custom_path):
     loader = GenericLoader.from_filesystem(
         repo_path,
         glob="**/*",
-        suffixes=[".py"],
+        suffixes=[".py", ".txt", ".md"],
         exclude=["**/non-utf8-encoding.py"],
         parser=LanguageParser(language=Language.PYTHON, parser_threshold=500),
     )
@@ -192,7 +200,7 @@ def main():
     if user_question:
          handle_user_input(user_question)
          if any(test["question"] == user_question for test in test_data):
-            evaluate_answers(st.session_state.conversation, test_data)
+            evaluate_answers(st.session_state.conversation, test_data,user_question)
 
 
     with st.sidebar:
