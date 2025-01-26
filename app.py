@@ -413,9 +413,38 @@ def main():
     github_url = st.text_input("Enter GitHub repository URL:")
     user_question = st.text_input("Ask a question about your GitHub repository:")
 
+    #New one
     if github_url:
-        with st.spinner("Fetching repository contents..."):
-            repo_data, vector_store = read_all_repo_files(github_url, github_token)
+    # Fetch data only if it's not already fetched for the current session
+        if not st.session_state.get("repo_data_fetched", False):
+            with st.spinner("Fetching repository contents..."):
+            # Fetch repository contents and create a vector store
+                repo_data, vector_store = read_all_repo_files(github_url, github_token)
+
+            if repo_data:
+                # Save the fetched repository data and vector store in session state
+                st.session_state.repo_data = repo_data
+                st.session_state.vector_store = vector_store
+                st.session_state.repo_data_fetched = True  # Mark as fetched
+
+                # Initialize the conversation chain
+                st.session_state.conversation = get_conversation_chain(vector_store)
+
+            else:
+                st.error("Failed to fetch content from GitHub.")
+    else:
+        st.info("Repository data already fetched. Ready for your questions.")
+
+    # Process the user's question
+    if user_question:
+        if st.session_state.get("conversation"):
+            handle_user_input(user_question)
+        else:
+            st.error("Conversation chain not initialized. Please check the repository link.")
+
+    # if github_url:
+    #     with st.spinner("Fetching repository contents..."):
+    #         repo_data, vector_store = read_all_repo_files(github_url, github_token)
     
 
 
@@ -431,18 +460,18 @@ def main():
             # else:
             #     st.error("Failed to fetch content from GitHub.")
 
-            if repo_data:
-                st.session_state.repo_data = repo_data
-                # Initialize the conversation chain with the vector store
-                if st.session_state.conversation is None:
-                    st.session_state.conversation = get_conversation_chain(vector_store)
+            # if repo_data:
+            #     st.session_state.repo_data = repo_data
+            #     # Initialize the conversation chain with the vector store
+            #     if st.session_state.conversation is None:
+            #         st.session_state.conversation = get_conversation_chain(vector_store)
 
-                # Handle user query related to the repository
-                if user_question:
-                    handle_user_input(user_question)
-                    # st.rerun  # To clear the input box and refresh the UI
-            else:
-                st.error("Failed to fetch content from GitHub.")
+            #     # Handle user query related to the repository
+            #     if user_question:
+            #         handle_user_input(user_question)
+            #         # st.rerun  # To clear the input box and refresh the UI
+            # else:
+            #     st.error("Failed to fetch content from GitHub.")
 
 if __name__ == "__main__":
     main()

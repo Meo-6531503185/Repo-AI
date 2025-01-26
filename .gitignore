@@ -15,3 +15,5 @@ __pycache__/
 # Ignore OS-specific files
 .DS_Store
 Thumbs.db
+
+repoai-440607-ac5b3bf82501.json
