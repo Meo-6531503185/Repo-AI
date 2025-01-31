@@ -2,24 +2,13 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 import streamlit as st
 from dotenv import load_dotenv
-from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from InstructorEmbedding import INSTRUCTOR
-from langchain_huggingface import HuggingFaceEndpoint
 from langchain.llms import HuggingFaceHub
-from langchain.embeddings import HuggingFaceEmbeddings
-from sentence_transformers import SentenceTransformer
 from langchain_community.embeddings import SentenceTransformerEmbeddings
-from langchain_community.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from htmlTemplates import css,bot_template,user_template
-from langchain_core.runnables import RunnableLambda
-import google.generativeai as genai
 import requests
 import os
 import vertexai
@@ -31,8 +20,18 @@ from langchain_google_vertexai import VertexAIEmbeddings
 import google.generativeai as palm
 from langchain.embeddings import GooglePalmEmbeddings
 import google.auth
-import black
-import autopep8
+
+# from langchain_core.runnables import RunnableLambda
+# import google.generativeai as genai
+# from langchain_community.chat_models import ChatOpenAI
+# from langchain.embeddings import HuggingFaceEmbeddings
+# from sentence_transformers import SentenceTransformer
+# from langchain.text_splitter import RecursiveCharacterTextSplitter
+# from InstructorEmbedding import INSTRUCTOR
+# from langchain_huggingface import HuggingFaceEndpoint
+# from langchain_huggingface import HuggingFaceEmbeddings
+# from langchain_community.embeddings import HuggingFaceInstructEmbeddings
+# from PyPDF2 import PdfReader
 
 load_dotenv()
 github_token = os.getenv("GITHUB_TOKEN")
@@ -124,7 +123,8 @@ def get_text_chunks(extracted_text):
 
 #Untouch
 def get_vector_store(text_chunks):
-    PROJECT_ID = "coderefactoringai"
+    # PROJECT_ID = "coderefactoringai"
+    PROJECT_ID = "repoai-440607"
     LOCATION = "us-central1"
     vertexai.init(project=PROJECT_ID, location=LOCATION)
     embeddings = VertexAIEmbeddings(model_name="text-embedding-004")
@@ -138,10 +138,11 @@ def get_conversation_chain(vector_store):
         search_kwargs = {"k":8},
     )
     llm = VertexAI(
-        project="coderefactoringai",
+        # project="coderefactoringai",
+        project = "repoai-440607",
         location="us-central1",
-        # model="gemini-1.5-flash-002",
-        model = "gemini-1.5-pro",
+        model="gemini-1.5-flash-002",
+        # model = "gemini-1.5-pro",
         model_kwargs={
             "temperature": 0.7,
             "max_length": 600,
@@ -177,21 +178,59 @@ def split_explanation_and_code(response_content):
 
 #New funs
 # Function to explain code in detail
-def explain_code_detailed(file_content):
+def explain_code_detailed(file_content, user_question):
     """
     Use AI to explain the given code in detail.
     """
     st.subheader("Detailed Explanation of the Code:")
-    explanation_query = f"""
+    if "line by line" in user_question.lower() or "each line" in user_question.lower():
+        explain_type = "line_by_line"
+    elif "block by block" in user_question.lower() or "each block" in user_question.lower():
+        explain_type = "block_by_block"
+    else:
+        explain_type = "general"
+
+    # Generate the appropriate prompt
+    if explain_type == "line_by_line":
+        explanation_query = f"""
 Provide a detailed, line-by-line explanation of the following code. For each line, include:
 - What the line does.
 - Why it is needed in the code.
 - Any potential side effects or important considerations related to that line.
 
+Please format your response as follows:
+1. Line of code: Explanation
+2. Line of code: Explanation
+
 Here is the code:
 {file_content}
 """
+    elif explain_type == "block_by_block":
+        explanation_query = f"""
+Analyze the following code and explain it **block by block**.  
+For each block:
+- Extract a meaningful snippet of code (group related lines together).
+- Explain what the block does.
+- Describe why it is necessary.
+- Highlight any important considerations or potential optimizations.
 
+Format your response as:
+### Code Block:
+```python
+<code_snippet>
+"""
+        
+    else:
+        explanation_query = f"""
+Provide a detailed general explanation of the following code. Include:
+- The purpose of the code.
+- How the code works.
+- The expected input/output.
+- Any important design choices or considerations.
+
+Here is the code:
+{file_content}
+"""
     response = st.session_state.conversation({"question": explanation_query})
     st.write(response["answer"])
 
@@ -280,7 +319,7 @@ def handle_user_input(user_question):
                 #New 
                  # Handle user request types
                 if "explain" in user_question.lower():
-                    explain_code_detailed(file_content)
+                    explain_code_detailed(file_content, user_question)
                 elif "refactor" in user_question.lower():
                     refactor_code(file_content)
                 elif "suggest" in user_question.lower():
