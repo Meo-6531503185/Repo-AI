@@ -141,8 +141,8 @@ def get_conversation_chain(vector_store):
         # project="coderefactoringai",
         project = "repoai-440607",
         location="us-central1",
-        model="gemini-1.5-flash-002",
-        # model = "gemini-1.5-pro",
+        # model="gemini-1.5-flash-002",
+        model = "gemini-1.5-pro",
         model_kwargs={
             "temperature": 0.7,
             "max_length": 600,
@@ -161,20 +161,41 @@ def get_conversation_chain(vector_store):
 
 #New fun for code 
 # Utility function to split explanation and code
+# def split_explanation_and_code(response_content):
+#     """
+#     Split the bot's response into explanation and code parts.
+#     Assumes the response has a section for explanation and another for code.
+#     """
+#     parts = response_content.split("```")
+#     if len(parts) > 1:
+#         explanation = parts[0].strip()  # Text before the code block
+#         code_snippet = parts[1].strip()  # Code block content
+#     else:
+#         explanation = response_content
+#         code_snippet = ""
+
+#     return explanation, code_snippet
+
+import re
+
 def split_explanation_and_code(response_content):
     """
-    Split the bot's response into explanation and code parts.
-    Assumes the response has a section for explanation and another for code.
+    Splits the AI response into explanation and code.
+    Works with responses that use triple backticks for code blocks.
     """
-    parts = response_content.split("```")
-    if len(parts) > 1:
-        explanation = parts[0].strip()  # Text before the code block
-        code_snippet = parts[1].strip()  # Code block content
+
+    # Match everything before and inside a code block
+    match = re.search(r"```(?:python)?\n(.*?)```", response_content, re.DOTALL)
+
+    if match:
+        code_snippet = match.group(1).strip()  # Extracted code
+        explanation = response_content.replace(match.group(0), "").strip()  # Remove the code block
     else:
-        explanation = response_content
+        explanation = response_content  # If no code block, return entire response as explanation
         code_snippet = ""
 
     return explanation, code_snippet
+
 
 #New funs
 # Function to explain code in detail
@@ -222,34 +243,60 @@ Format your response as:
         
     else:
         explanation_query = f"""
-Provide a detailed general explanation of the following code. Include:
-- The purpose of the code.
-- How the code works.
-- The expected input/output.
-- Any important design choices or considerations.
+Provide a high-level summary of the following code. Focus on:
+- The overall purpose of the code.
+- How the code is structured.
+- The key functionalities it provides.
+- Any important design choices.
 
 Here is the code:
 {file_content}
 """
+
     response = st.session_state.conversation({"question": explanation_query})
     st.write(response["answer"])
 
-# Function to refactor code
+
 def refactor_code(file_content):
     """
     Use AI to refactor the given code.
     """
     st.subheader("Refactored Code:")
-    refactor_query = f"Optimize the following code for better performance and efficiency without changing its functionality:\n{file_content}"
-    response = st.session_state.conversation({"question": refactor_query})
-    explanation, code_snippet = split_explanation_and_code(response["answer"])
+
+    # First, display the original code
+    st.write("### Original Code:")
+    st.code(file_content, language='python')  # Display the original code snippet
+
+
+    # Create the refactor query
+    refactor_query = f"""
+    Instruction:
+        "Act as an expert in code optimization and refactoring. Analyze the code that are got from fetching data from github repository link and generate a refactored version that:
+        Improves efficiency (performance)
+        Enhances readability and maintainability
+        Boosts scalability
+        DO NOT change function names or external dependencies.
+        Keep the functionality identical to the original code but you can modify the source code to improve better effiency, readability, maintainability and scalability and keep the output be the same.
+        Original Code:
+        {file_content}
+        Important feature: (To let the users know what changes made to their source code)
+        After refactoring, include a summary explaining what changes were made and how they help achieve the improvements and the modified code.
+    """
     
+    # Request the refactor from the AI model
+    response = st.session_state.conversation({"question": refactor_query})
+    # refactored_code
+
+    # Split the response into explanation and refactored code
+    explanation, code_snippet = split_explanation_and_code(response["answer"])
+
     # Display explanation and refactored code
-    st.write("### Explanation")
-    st.write(explanation)
-    if code_snippet:
-        st.write("### Refactored Code")
-        st.code(code_snippet, language='python')
+    st.write("### Explanation of Refactored Code:")
+    st.write(explanation)  # Display the explanation of why the code was refactored this way
+
+    st.write("### Refactored Code:")
+    st.code(code_snippet, language='python')  # Display the refactored code
+
 
 # Function to suggest features
 def suggest_features(file_content):
