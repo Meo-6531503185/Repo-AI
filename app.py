@@ -20,18 +20,8 @@ from langchain_google_vertexai import VertexAIEmbeddings
 import google.generativeai as palm
 from langchain.embeddings import GooglePalmEmbeddings
 import google.auth
-
-# from langchain_core.runnables import RunnableLambda
-# import google.generativeai as genai
-# from langchain_community.chat_models import ChatOpenAI
-# from langchain.embeddings import HuggingFaceEmbeddings
-# from sentence_transformers import SentenceTransformer
-# from langchain.text_splitter import RecursiveCharacterTextSplitter
-# from InstructorEmbedding import INSTRUCTOR
-# from langchain_huggingface import HuggingFaceEndpoint
-# from langchain_huggingface import HuggingFaceEmbeddings
-# from langchain_community.embeddings import HuggingFaceInstructEmbeddings
-# from PyPDF2 import PdfReader
+from githubTest import *
+from data_fetch.fetching import fetch_file_content, fetch_all_files_from_repo, fetch_repo_contents
 
 load_dotenv()
 github_token = os.getenv("GITHUB_TOKEN")
@@ -39,50 +29,6 @@ if github_token:
     print("GitHub Token loaded successfully")
 else:
     print("GitHub Token not found")
-
-
-#Modified 0.2
-#Untouch
-def fetch_file_content(file_url):
-    """Fetch the content of a single file."""
-    file_response = requests.get(file_url)
-    if file_response.status_code == 200:
-        return file_response.text
-    else:
-        st.warning(f"Failed to retrieve file: {file_url}")
-        return ""
-    
-#Untouch
-def fetch_repo_contents(api_url, headers):
-    """Fetch the contents of the entire repository."""
-    response = requests.get(api_url, headers=headers)
-    
-    if response.status_code != 200:
-        st.error(f"Failed to retrieve files from GitHub. Status code: {response.status_code}")
-        return []
-
-    return response.json()
-    
-#Untouch
-def fetch_all_files_from_repo(api_url, headers):
-    """Fetch all files from a GitHub repository, including files inside subfolders."""
-    all_files = []  # This will hold the paths of all files in the repository
-    repo_contents = fetch_repo_contents(api_url, headers)
-
-    for file_info in repo_contents:
-        if file_info["type"] == "file":
-            # For files, add them to the list
-            all_files.append({
-                "name": file_info["name"],
-                "url": file_info["download_url"],
-                "path": file_info["path"]
-            })
-        elif file_info["type"] == "dir":
-            # If it's a directory, recurse into it
-            subfolder_url = file_info["url"]
-            all_files += fetch_all_files_from_repo(subfolder_url, headers)
-
-    return all_files
 
 #Untouch
 def read_all_repo_files(github_url, github_token):
@@ -157,24 +103,6 @@ def get_conversation_chain(vector_store):
         memory=memory,
     )
     return conversation_chain
-
-
-#New fun for code 
-# Utility function to split explanation and code
-# def split_explanation_and_code(response_content):
-#     """
-#     Split the bot's response into explanation and code parts.
-#     Assumes the response has a section for explanation and another for code.
-#     """
-#     parts = response_content.split("```")
-#     if len(parts) > 1:
-#         explanation = parts[0].strip()  # Text before the code block
-#         code_snippet = parts[1].strip()  # Code block content
-#     else:
-#         explanation = response_content
-#         code_snippet = ""
-
-#     return explanation, code_snippet
 
 import re
 
@@ -352,16 +280,6 @@ def handle_user_input(user_question):
                 # 1. Display the source code first
                 st.subheader(f"Source Code in '{file_name}':")
                 st.code(file_content, language='python')  # Adjust language based on file type
-
-
-                #Original
-                # 2. Pass the file content to the AI for a detailed explanation
-                # st.subheader("Detailed Explanation of the Code:")
-                # explanation_query = f"Explain in detail what the following code does:\n{file_content}"
-                # response = conversation_chain({"question": explanation_query})
-
-                # # Display the explanation from the AI
-                # st.write(response["answer"])
 
                 #New 
                  # Handle user request types
