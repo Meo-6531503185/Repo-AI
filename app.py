@@ -393,12 +393,26 @@ def main():
     if "repo_data" not in st.session_state:  # Add repo_data initialization
         st.session_state.repo_data = {}
 
+    if "GITHUB_APP_ID" not in st.session_state:
+        st.session_state.GITHUB_APP_ID = ""
+    if "GITHUB_PRIVATE_KEY_PATH" not in st.session_state:
+        st.session_state.GITHUB_PRIVATE_KEY_PATH = ""
+    if "GITHUB_REPOSITORY" not in st.session_state:
+        st.session_state.GITHUB_REPOSITORY = ""
+
     st.header(":red[REPO AI]")
     st.subheader(":blue[Superduper performance] :rocket:")
 
     # Display chat history if available
     # if st.session_state.chat_history:
     # display_chat_history()
+
+    #For Side bar ( Github Extra features)
+    with st.sidebar:
+        st.header("GitHub Credentials (Optional)")
+        st.session_state.GITHUB_APP_ID = st.text_input("GitHub App ID", value=st.session_state.GITHUB_APP_ID)
+        st.session_state.GITHUB_PRIVATE_KEY_PATH = st.text_input("Private Key Path", value=st.session_state.GITHUB_PRIVATE_KEY_PATH)
+        st.session_state.GITHUB_REPOSITORY = st.text_input("GitHub Repository (e.g., owner/repo)", value=st.session_state.GITHUB_REPOSITORY)
 
 
     github_url = st.text_input("Enter GitHub repository URL:")
@@ -423,6 +437,41 @@ def main():
 
             else:
                 st.error("Failed to fetch content from GitHub.")
+
+    #GitHub Credentials Handling
+    elif st.session_state.GITHUB_APP_ID and st.session_state.GITHUB_PRIVATE_KEY_PATH and st.session_state.GITHUB_REPOSITORY:
+        try:
+            with open(st.session_state.GITHUB_PRIVATE_KEY_PATH, "r") as key_file:
+                GITHUB_PRIVATE_KEY = key_file.read()
+        except FileNotFoundError:
+            st.error("Error: Private key file not found. Please provide a valid path.")
+            return
+        
+
+        wrapper = GitHubAPIWrapper(
+            github_repository=st.session_state.GITHUB_REPOSITORY,
+            github_app_id=st.session_state.GITHUB_APP_ID,
+            github_app_private_key=GITHUB_PRIVATE_KEY
+        )
+
+        st.success("Connected to GitHub successfully!")
+        repo = wrapper.github.get_repo(st.session_state.GITHUB_REPOSITORY)
+
+        # Fetch and display issues & pull requests
+        st.subheader("Open Issues")
+        st.write(wrapper.parse_issues(repo.get_issues(state="open")))
+
+        st.subheader("Pull Requests")
+        st.write(wrapper.parse_pull_requests(repo.get_pulls()))
+
+        st.subheader("Repository Files")
+        st.write(wrapper.list_files_in_main_branch())
+
+        # Create a branch button
+        if st.button("Create Test Branch"):
+            result = wrapper.create_branch("test_branch")
+            st.write(result)
+
     else:
         st.info("Please put a GitHub Repository Link for Data fetching")
 
