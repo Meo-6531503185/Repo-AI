@@ -2,8 +2,6 @@ import requests
 import streamlit as st
 
 
-#Modified 0.2
-#Untouch
 def fetch_file_content(file_url):
     """Fetch the content of a single file."""
     file_response = requests.get(file_url)
@@ -13,7 +11,7 @@ def fetch_file_content(file_url):
         st.warning(f"Failed to retrieve file: {file_url}")
         return ""
     
-#Untouch
+
 def fetch_repo_contents(api_url, headers):
     """Fetch the contents of the entire repository."""
     response = requests.get(api_url, headers=headers)
@@ -24,7 +22,7 @@ def fetch_repo_contents(api_url, headers):
 
     return response.json()
     
-#Untouch
+
 def fetch_all_files_from_repo(api_url, headers):
     """Fetch all files from a GitHub repository, including files inside subfolders."""
     all_files = []  # This will hold the paths of all files in the repository

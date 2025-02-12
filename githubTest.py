@@ -61,7 +61,7 @@ class GitHubAPIWrapper(BaseModel):
                 "PyGithub is not installed. "
                 "Please install it with `pip install PyGithub`"
             )
-
+        
         try:
             # interpret the key as a file path
             # fallback to interpreting as the key itself

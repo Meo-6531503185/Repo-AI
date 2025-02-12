@@ -131,7 +131,7 @@ def explain_code_detailed(file_content, user_question):
     """
     Use AI to explain the given code in detail.
     """
-    st.subheader("Detailed Explanation of the Code:")
+    # st.subheader("Detailed Explanation of the Code:")
     if "line by line" in user_question.lower() or "each line" in user_question.lower():
         explain_type = "line_by_line"
     elif "block by block" in user_question.lower() or "each block" in user_question.lower():
@@ -182,18 +182,19 @@ Here is the code:
 """
 
     response = st.session_state.conversation({"question": explanation_query})
-    st.write(response["answer"])
+    return response["answer"]
+    # st.write(response["answer"])
 
 
 def refactor_code(file_content):
     """
     Use AI to refactor the given code.
     """
-    st.subheader("Refactored Code:")
+    # st.subheader("Refactored Code:")
 
-    # First, display the original code
-    st.write("### Original Code:")
-    st.code(file_content, language='python')  # Display the original code snippet
+    # # First, display the original code
+    # st.write("### Original Code:")
+    # st.code(file_content, language='python')  # Display the original code snippet
 
 
     # Create the refactor query
@@ -218,12 +219,14 @@ def refactor_code(file_content):
     # Split the response into explanation and refactored code
     explanation, code_snippet = split_explanation_and_code(response["answer"])
 
-    # Display explanation and refactored code
-    st.write("### Explanation of Refactored Code:")
-    st.write(explanation)  # Display the explanation of why the code was refactored this way
+    return f"### Explanation of Refactored Code:\n{explanation}\n\n### Refactored Code:\n```python\n{code_snippet}\n```"
 
-    st.write("### Refactored Code:")
-    st.code(code_snippet, language='python')  # Display the refactored code
+    # Display explanation and refactored code
+    # st.write("### Explanation of Refactored Code:")
+    # st.write(explanation)  # Display the explanation of why the code was refactored this way
+
+    # st.write("### Refactored Code:")
+    # st.code(code_snippet, language='python')  # Display the refactored code
 
 
 # Function to suggest features
@@ -246,12 +249,15 @@ Here is the code:
     response = st.session_state.conversation({"question": suggestion_query})
     explanation, code_snippet = split_explanation_and_code(response["answer"])
 
+    return f"### Explanation\n{explanation}\n\n### Modified Code\n```python\n{code_snippet}\n```" if code_snippet else f"### Explanation\n{explanation}"
+
+
     # Display explanation and suggested code
-    st.write("### Explanation")
-    st.write(explanation)
-    if code_snippet:
-        st.write("### Modified Code")
-        st.code(code_snippet, language='python')
+    # st.write("### Explanation")
+    # st.write(explanation)
+    # if code_snippet:
+    #     st.write("### Modified Code")
+    #     st.code(code_snippet, language='python')
 
 #New fun for code
 def handle_user_input(user_question):
@@ -262,6 +268,8 @@ def handle_user_input(user_question):
         import re
         match = re.search(r'["\']?([\w\-/]+(\.\w+))["\']?', user_question)
         file_name = match.group(1) if match else None
+
+        special_query = any(keyword in user_question.lower() for keyword in ["explain", "refactor", "suggest"])
 
         if file_name:
             # Ensure repo_data is loaded
@@ -284,87 +292,117 @@ def handle_user_input(user_question):
                 #New 
                  # Handle user request types
                 if "explain" in user_question.lower():
-                    explain_code_detailed(file_content, user_question)
+                    bot_reply = explain_code_detailed(file_content, user_question)
                 elif "refactor" in user_question.lower():
-                    refactor_code(file_content)
+                    bot_reply= refactor_code(file_content)
                 elif "suggest" in user_question.lower():
-                    suggest_features(file_content)
+                    bot_reply= suggest_features(file_content)
                 else:
                     st.error("Unsupported operation. Please use 'explain', 'refactor', or 'suggest' in your question.")
+                    return
+                
+                if special_query and bot_reply:
+                    st.session_state.messages.append({"role": "user", "content": user_question})
+                    st.session_state.messages.append({"role": "assistant", "content": bot_reply})
 
             else:
                 st.error(f"File '{file_name}' not found in the repository.")
         else:
              # Handle non-file-specific questions as usual
             response = conversation_chain({"question": user_question})
-            st.session_state.chat_history = response['chat_history']
+            bot_reply = response.get("chat_history", ["No response."])[-1].content
 
-            for i, message in enumerate(st.session_state.chat_history):
-                if i % 2 == 0:
-                    st.write(f"User: {message.content}")
-                else:
-                    st.write(f"Bot: {message.content}")
+            # Append to chat history
+            # if not st.session_state.messages or st.session_state.messages[-1]["content"] != bot_reply:
+            if bot_reply:
+                st.session_state.messages.append({"role": "user", "content": user_question})
+                st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+            return bot_reply
+            # st.session_state.chat_history = response['chat_history']
+
+            # for i, message in enumerate(st.session_state.chat_history):
+            #     if i % 2 == 0:
+            #         st.write(f"User: {message.content}")
+            #     else:
+            #         st.write(f"Bot: {message.content}")
     else:
         st.error("Conversation chain is not initialized. Please provide a repository URL first.")
 
 
 # Function to display the chat history with a background color
 def display_chat_history():
-    st.markdown(
-        """
-        <style>
-        .chat-container {
-            background-color: #f0f4f7;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .user-message {
-            color: #333333;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-        .bot-message {
-            color: #0056b3;
-            margin-bottom: 8px;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-    for i, message in enumerate(st.session_state.chat_history):
-        if i % 2 == 0:
-            st.markdown(f'<div class="user-message"> User: {message.content}</div>', unsafe_allow_html=True)
+    for message in st.session_state.messages:
+        if message["role"] == "user":
+            st.chat_message("user").markdown(f"{message['content']}")
         else:
-            st.markdown(f'<div class="bot-message"> Bot: {message.content}</div>', unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+            if message["content"]:
+                st.chat_message("assistant").markdown(f"{message['content']}")
+            else:
+                st.chat_message("assistant").markdown("*No response available*")  
+        # with st.chat_message(message["role"]):
+        #     st.markdown(message["content"])
+
+
+
+    # st.markdown(
+    #     """
+    #     <style>
+    #     .chat-container {
+    #         background-color: #f0f4f7;
+    #         padding: 10px;
+    #         border-radius: 8px;
+    #         margin-bottom: 20px;
+    #         max-height: 300px;
+    #         overflow-y: auto;
+    #     }
+    #     .user-message {
+    #         color: #333333;
+    #         font-weight: bold;
+    #         margin-bottom: 8px;
+    #     }
+    #     .bot-message {
+    #         color: #0056b3;
+    #         margin-bottom: 8px;
+    #     }
+    #     </style>
+    #     """,
+    #     unsafe_allow_html=True,
+    # )
+
+    # st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+    # for i, message in enumerate(st.session_state.chat_history):
+    #     if i % 2 == 0:
+    #         st.markdown(f'<div class="user-message"> User: {message.content}</div>', unsafe_allow_html=True)
+    #     else:
+    #         st.markdown(f'<div class="bot-message"> Bot: {message.content}</div>', unsafe_allow_html=True)
+    # st.markdown('</div>', unsafe_allow_html=True)
 
 #Modified 0.2
 # Main Streamlit application function
 def main():
     st.set_page_config(page_title="GitHub Repositories Reader")
 
+
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+    # if "chat_history" not in st.session_state:
+    #     st.session_state.chat_history = []
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
         #Newly added one for code
     if "repo_data" not in st.session_state:  # Add repo_data initialization
         st.session_state.repo_data = {}
 
-    st.header("Provide GitHub Repository URL & Ask :books:")
+    st.header(":red[REPO AI]")
+    st.subheader(":blue[Superduper performance] :rocket:")
 
     # Display chat history if available
-    if st.session_state.chat_history:
-        display_chat_history()
+    # if st.session_state.chat_history:
+    # display_chat_history()
 
 
     github_url = st.text_input("Enter GitHub repository URL:")
-    user_question = st.text_input("Ask a question about your GitHub repository:")
+    user_question = st.chat_input("Ask a question about your GitHub repository:")
 
     #New one
     if github_url:
@@ -390,10 +428,15 @@ def main():
 
     # Process the user's question
     if user_question:
-        if st.session_state.get("conversation"):
+        # if st.session_state.get("conversation"):
             handle_user_input(user_question)
-        else:
-            st.error("Conversation chain not initialized. Please check the repository link.")
+            display_chat_history()
+        # else:
+        #     st.error("Conversation chain not initialized. Please check the repository link.")
+    # if user_question and st.session_state.get("conversation"):
+    #     handle_user_input(user_question)
+    # elif user_question:
+    #     st.error("Conversation chain not initialized. Please check the repository link.")
 
 if __name__ == "__main__":
     main()
