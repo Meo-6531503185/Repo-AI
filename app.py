@@ -45,7 +45,7 @@ def read_all_repo_files(github_url, github_token):
     for file in all_files:
         file_content = fetch_file_content(file["url"])
         #Touch ( changed from get_text_chunks to get_text_chunks_for_refactoring)
-        # chunks = get_text_chunks_for_refactoring(file_content)
+        #chunks = get_text_chunks_for_refactoring(file_content)
 
         chunks = get_text_chunks(file_content)
         all_file_chunks.extend(chunks)
@@ -96,6 +96,7 @@ def get_conversation_chain(vector_store):
             "top_k": 50,
         },
     )
+
     memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
     conversation_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
@@ -340,8 +341,7 @@ def display_chat_history():
             else:
                 st.chat_message("assistant").markdown("*No response available*")  
         # with st.chat_message(message["role"]):
-        #     st.markdown(message["content"])
-
+        #     st.markdown(message["content"];
 
 
     # st.markdown(
