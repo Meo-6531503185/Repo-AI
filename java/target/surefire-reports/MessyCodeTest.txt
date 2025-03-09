@@ -1,0 +1,46 @@
+-------------------------------------------------------------------------------
+Test set: MessyCodeTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 0, Errors: 4, Skipped: 0, Time elapsed: 0.021 s <<< FAILURE! -- in MessyCodeTest
+MessyCodeTest.testEvenOdd -- Time elapsed: 0 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problems: 
+	The method checkEvenOdd(int) is undefined for the type MessyCode
+	The method checkEvenOdd(int) is undefined for the type MessyCode
+
+	at MessyCodeTest.testEvenOdd(MessyCodeTest.java:7)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+MessyCodeTest.testLoopSum -- Time elapsed: 0.004 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problem: 
+	The method loopSum(int) is undefined for the type MessyCode
+
+	at MessyCodeTest.testLoopSum(MessyCodeTest.java:13)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+MessyCodeTest.testRandomNumberGeneration -- Time elapsed: 0.003 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problems: 
+	The method generateRandomNumber() is undefined for the type MessyCode
+	The method generateRandomNumber() is undefined for the type MessyCode
+
+	at MessyCodeTest.testRandomNumberGeneration(MessyCodeTest.java:18)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+MessyCodeTest.testStringArrayIteration -- Time elapsed: 0.002 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problem: 
+	The method iterateStringArray() is undefined for the type MessyCode
+
+	at MessyCodeTest.testStringArrayIteration(MessyCodeTest.java:23)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+

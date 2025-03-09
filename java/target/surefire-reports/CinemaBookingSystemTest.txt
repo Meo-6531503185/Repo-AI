@@ -1,0 +1,109 @@
+-------------------------------------------------------------------------------
+Test set: CinemaBookingSystemTest
+-------------------------------------------------------------------------------
+Tests run: 9, Failures: 0, Errors: 9, Skipped: 0, Time elapsed: 0.150 s <<< FAILURE! -- in CinemaBookingSystemTest
+CinemaBookingSystemTest.testDisplaySeats -- Time elapsed: 0.068 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problems: 
+	The method initializeSeats() from the type CinemaBookingSystem is not visible
+	The method displaySeats() from the type CinemaBookingSystem is not visible
+
+	at CinemaBookingSystemTest.testDisplaySeats(CinemaBookingSystemTest.java:20)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+CinemaBookingSystemTest.testBookSeatValid -- Time elapsed: 0.005 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problems: 
+	The method initializeSeats() from the type CinemaBookingSystem is not visible
+	Scanner cannot be resolved to a type
+	Scanner cannot be resolved to a type
+	The field CinemaBookingSystem.seats is not visible
+
+	at CinemaBookingSystemTest.testBookSeatValid(CinemaBookingSystemTest.java:26)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+CinemaBookingSystemTest.testBookSeatInvalidInput -- Time elapsed: 0.008 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problems: 
+	The method initializeSeats() from the type CinemaBookingSystem is not visible
+	Scanner cannot be resolved to a type
+	Scanner cannot be resolved to a type
+
+	at CinemaBookingSystemTest.testBookSeatInvalidInput(CinemaBookingSystemTest.java:48)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+CinemaBookingSystemTest.testBuyPopcornLarge -- Time elapsed: 0.003 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problems: 
+	Scanner cannot be resolved to a type
+	Scanner cannot be resolved to a type
+
+	at CinemaBookingSystemTest.testBuyPopcornLarge(CinemaBookingSystemTest.java:80)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+CinemaBookingSystemTest.testBuyPopcornSmall -- Time elapsed: 0 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problems: 
+	Scanner cannot be resolved to a type
+	Scanner cannot be resolved to a type
+
+	at CinemaBookingSystemTest.testBuyPopcornSmall(CinemaBookingSystemTest.java:62)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+CinemaBookingSystemTest.testInitializeSeats -- Time elapsed: 0 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problems: 
+	The method initializeSeats() from the type CinemaBookingSystem is not visible
+	The field CinemaBookingSystem.ROWS is not visible
+	The field CinemaBookingSystem.COLUMNS is not visible
+	The field CinemaBookingSystem.seats is not visible
+
+	at CinemaBookingSystemTest.testInitializeSeats(CinemaBookingSystemTest.java:10)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+CinemaBookingSystemTest.testBookSeatAlreadyBooked -- Time elapsed: 0.003 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problems: 
+	The method initializeSeats() from the type CinemaBookingSystem is not visible
+	Scanner cannot be resolved to a type
+	Scanner cannot be resolved to a type
+
+	at CinemaBookingSystemTest.testBookSeatAlreadyBooked(CinemaBookingSystemTest.java:37)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+CinemaBookingSystemTest.testBuyPopcornMedium -- Time elapsed: 0.003 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problems: 
+	Scanner cannot be resolved to a type
+	Scanner cannot be resolved to a type
+
+	at CinemaBookingSystemTest.testBuyPopcornMedium(CinemaBookingSystemTest.java:71)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+CinemaBookingSystemTest.testBuyPopcornInvalid -- Time elapsed: 0 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problems: 
+	Scanner cannot be resolved to a type
+	Scanner cannot be resolved to a type
+
+	at CinemaBookingSystemTest.testBuyPopcornInvalid(CinemaBookingSystemTest.java:89)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+

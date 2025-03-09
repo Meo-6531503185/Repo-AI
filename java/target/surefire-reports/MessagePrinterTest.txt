@@ -1,0 +1,32 @@
+-------------------------------------------------------------------------------
+Test set: MessagePrinterTest
+-------------------------------------------------------------------------------
+Tests run: 4, Failures: 1, Errors: 1, Skipped: 0, Time elapsed: 0.060 s <<< FAILURE! -- in MessagePrinterTest
+MessagePrinterTest.testPrintMessage_NullMessage -- Time elapsed: 0.005 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+expected: <
+> but was: <null
+>
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:177)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1141)
+	at MessagePrinterTest.testPrintMessage_NullMessage(MessagePrinterTest.java:24)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+MessagePrinterTest.testPrintMessageWithMockito -- Time elapsed: 0 s <<< ERROR!
+java.lang.Error: 
+Unresolved compilation problems: 
+	The method mock(Class<PrintStream>) is undefined for the type MessagePrinterTest
+	The method when(void) is undefined for the type MessagePrinterTest
+	The method verify(PrintStream) is undefined for the type MessagePrinterTest
+
+	at MessagePrinterTest.testPrintMessageWithMockito(MessagePrinterTest.java:41)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+

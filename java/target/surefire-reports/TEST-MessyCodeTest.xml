@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="HelloWorldTest" time="0.013" tests="5" errors="5" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="MessyCodeTest" time="0.021" tests="4" errors="4" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -58,87 +58,48 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testPrintMessageHelloJava" classname="HelloWorldTest" time="0.005">
-    <error message="Unresolved compilation problems: &#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(null) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
+  <testcase name="testEvenOdd" classname="MessyCodeTest" time="0.0">
+    <error message="Unresolved compilation problems: &#10;	The method checkEvenOdd(int) is undefined for the type MessyCode&#10;	The method checkEvenOdd(int) is undefined for the type MessyCode&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
 Unresolved compilation problems: 
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(null) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
+	The method checkEvenOdd(int) is undefined for the type MessyCode
+	The method checkEvenOdd(int) is undefined for the type MessyCode
 
-	at HelloWorldTest.<init>(HelloWorldTest.java:7)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
-	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at MessyCodeTest.testEvenOdd(MessyCodeTest.java:7)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 ]]></error>
   </testcase>
-  <testcase name="testPrintMessageEmpty" classname="HelloWorldTest" time="0.002">
-    <error message="Unresolved compilation problems: &#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(null) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
-Unresolved compilation problems: 
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(null) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
+  <testcase name="testLoopSum" classname="MessyCodeTest" time="0.004">
+    <error message="Unresolved compilation problem: &#10;	The method loopSum(int) is undefined for the type MessyCode&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
+Unresolved compilation problem: 
+	The method loopSum(int) is undefined for the type MessyCode
 
-	at HelloWorldTest.<init>(HelloWorldTest.java:7)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
-	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at MessyCodeTest.testLoopSum(MessyCodeTest.java:13)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 ]]></error>
   </testcase>
-  <testcase name="testPrintMessageWithSpaces" classname="HelloWorldTest" time="0.002">
-    <error message="Unresolved compilation problems: &#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(null) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
+  <testcase name="testRandomNumberGeneration" classname="MessyCodeTest" time="0.003">
+    <error message="Unresolved compilation problems: &#10;	The method generateRandomNumber() is undefined for the type MessyCode&#10;	The method generateRandomNumber() is undefined for the type MessyCode&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
 Unresolved compilation problems: 
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(null) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
+	The method generateRandomNumber() is undefined for the type MessyCode
+	The method generateRandomNumber() is undefined for the type MessyCode
 
-	at HelloWorldTest.<init>(HelloWorldTest.java:7)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
-	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at MessyCodeTest.testRandomNumberGeneration(MessyCodeTest.java:18)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 ]]></error>
   </testcase>
-  <testcase name="testPrintMessageNull" classname="HelloWorldTest" time="0.0">
-    <error message="Unresolved compilation problems: &#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(null) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
-Unresolved compilation problems: 
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(null) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
+  <testcase name="testStringArrayIteration" classname="MessyCodeTest" time="0.002">
+    <error message="Unresolved compilation problem: &#10;	The method iterateStringArray() is undefined for the type MessyCode&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
+Unresolved compilation problem: 
+	The method iterateStringArray() is undefined for the type MessyCode
 
-	at HelloWorldTest.<init>(HelloWorldTest.java:7)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
-	at java.base/java.util.Optional.orElseGet(Optional.java:364)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-]]></error>
-  </testcase>
-  <testcase name="testPrintMessageHelloWorld" classname="HelloWorldTest" time="0.0">
-    <error message="Unresolved compilation problems: &#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(null) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
-Unresolved compilation problems: 
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(null) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-
-	at HelloWorldTest.<init>(HelloWorldTest.java:7)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
-	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at MessyCodeTest.testStringArrayIteration(MessyCodeTest.java:23)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 ]]></error>

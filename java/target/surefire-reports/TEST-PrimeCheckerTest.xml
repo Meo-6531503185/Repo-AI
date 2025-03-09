@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="HelloWorldTest" time="0.013" tests="5" errors="5" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="PrimeCheckerTest" time="0.025" tests="5" errors="5" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -15,7 +15,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="US"/>
     <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk-21\bin"/>
-    <property name="sun.java.command" value="C:\Users\user\AppData\Local\Temp\surefire7500062696929632855\surefirebooter-20250205143628757_3.jar C:\Users\user\AppData\Local\Temp\surefire7500062696929632855 2025-02-05T14-36-28_511-jvmRun1 surefire-20250205143628757_1tmp surefire_0-20250205143628757_2tmp"/>
+    <property name="sun.java.command" value="C:\Users\user\AppData\Local\Temp\surefire7103032457017121655\surefirebooter-20250205140429886_3.jar C:\Users\user\AppData\Local\Temp\surefire7103032457017121655 2025-02-05T14-04-29_645-jvmRun1 surefire-20250205140429886_1tmp surefire_0-20250205140429886_2tmp"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="C:\Users\user\Documents\RepoAI_Github\Repo-AI\java\target\test-classes;C:\Users\user\Documents\RepoAI_Github\Repo-AI\java\target\classes;C:\Users\user\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.0\junit-jupiter-api-5.10.0.jar;C:\Users\user\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\user\.m2\repository\org\junit\platform\junit-platform-commons\1.10.0\junit-platform-commons-1.10.0.jar;C:\Users\user\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\user\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.0\junit-jupiter-engine-5.10.0.jar;C:\Users\user\.m2\repository\org\junit\platform\junit-platform-engine\1.10.0\junit-platform-engine-1.10.0.jar;"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -30,7 +30,7 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
-    <property name="surefire.real.class.path" value="C:\Users\user\AppData\Local\Temp\surefire7500062696929632855\surefirebooter-20250205143628757_3.jar"/>
+    <property name="surefire.real.class.path" value="C:\Users\user\AppData\Local\Temp\surefire7103032457017121655\surefirebooter-20250205140429886_3.jar"/>
     <property name="user.script" value=""/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="21.0.1+12-LTS-29"/>
@@ -58,87 +58,68 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testPrintMessageHelloJava" classname="HelloWorldTest" time="0.005">
-    <error message="Unresolved compilation problems: &#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(null) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
+  <testcase name="testIsPrimeTrue" classname="PrimeCheckerTest" time="0.005">
+    <error message="Unresolved compilation problems: &#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
 Unresolved compilation problems: 
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(null) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
 
-	at HelloWorldTest.<init>(HelloWorldTest.java:7)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
-	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at PrimeCheckerTest.testIsPrimeTrue(PrimeCheckerTest.java:7)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 ]]></error>
   </testcase>
-  <testcase name="testPrintMessageEmpty" classname="HelloWorldTest" time="0.002">
-    <error message="Unresolved compilation problems: &#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(null) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
-Unresolved compilation problems: 
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(null) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
+  <testcase name="testIsPrimeZero" classname="PrimeCheckerTest" time="0.003">
+    <error message="Unresolved compilation problem: &#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
+Unresolved compilation problem: 
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
 
-	at HelloWorldTest.<init>(HelloWorldTest.java:7)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
-	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at PrimeCheckerTest.testIsPrimeZero(PrimeCheckerTest.java:39)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 ]]></error>
   </testcase>
-  <testcase name="testPrintMessageWithSpaces" classname="HelloWorldTest" time="0.002">
-    <error message="Unresolved compilation problems: &#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(null) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
+  <testcase name="testIsPrimeNegativeNumber" classname="PrimeCheckerTest" time="0.003">
+    <error message="Unresolved compilation problems: &#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
 Unresolved compilation problems: 
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(null) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
 
-	at HelloWorldTest.<init>(HelloWorldTest.java:7)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
-	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at PrimeCheckerTest.testIsPrimeNegativeNumber(PrimeCheckerTest.java:33)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 ]]></error>
   </testcase>
-  <testcase name="testPrintMessageNull" classname="HelloWorldTest" time="0.0">
-    <error message="Unresolved compilation problems: &#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(null) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
+  <testcase name="testIsPrimeLargeNumber" classname="PrimeCheckerTest" time="0.003">
+    <error message="Unresolved compilation problems: &#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
 Unresolved compilation problems: 
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(null) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
 
-	at HelloWorldTest.<init>(HelloWorldTest.java:7)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
-	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at PrimeCheckerTest.testIsPrimeLargeNumber(PrimeCheckerTest.java:26)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 ]]></error>
   </testcase>
-  <testcase name="testPrintMessageHelloWorld" classname="HelloWorldTest" time="0.0">
-    <error message="Unresolved compilation problems: &#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(null) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;	The method printMessage(String) is undefined for the type HelloWorld&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
+  <testcase name="testIsPrimeFalse" classname="PrimeCheckerTest" time="0.002">
+    <error message="Unresolved compilation problems: &#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;	The method isPrime(int) is undefined for the type PrimeCheckerTest&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
 Unresolved compilation problems: 
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(null) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
-	The method printMessage(String) is undefined for the type HelloWorld
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
+	The method isPrime(int) is undefined for the type PrimeCheckerTest
 
-	at HelloWorldTest.<init>(HelloWorldTest.java:7)
-	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
-	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
-	at java.base/java.util.Optional.orElseGet(Optional.java:364)
+	at PrimeCheckerTest.testIsPrimeFalse(PrimeCheckerTest.java:16)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 ]]></error>

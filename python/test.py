@@ -10,10 +10,10 @@ def extract_class_name(java_code):
     match = re.search(r'\bclass\s+(\w+)', java_code)
     return match.group(1) if match else "GeneratedCode"
 
-model = VertexAI(model = "gemini-1.5-flash-002")
+model = VertexAI(model = "gemini-1.5-pro")
 
 
-def generate_java_code_and_test(user_code, requirements):
+def generate_java_code_and_test(user_code):
     """Generate Java source and test files based on user input."""
     output_dir = "../java/src/main/java/"
     os.makedirs(output_dir, exist_ok=True)  # Create directories if they don't exist
@@ -33,20 +33,15 @@ def generate_java_code_and_test(user_code, requirements):
     with open(os.path.join(output_dir, f"{class_name}.java"), "w") as file:
         file.write(java_code)
     
-    system_template = f"""You are a proficient Java developer and an expert in Test-Driven development. 
-    Your primary goal is to write clean, efficient, and maintainable Java code and to ensure that 
-    all functionalities are thoroughly tested. Here are the requirements for the code you need to write: {requirements}.
-    Reminders : 
-    1. Just create the tests. Do not explain anything.
-    2. Provide only the raw Java code without any markdown or formatting symbols.
-    3. Do not include the user code. Just write the test code.
-    4. Do NOT add the package name and class name at the top of the code."""
+    system_template = f"""Generate JUnit test cases for the following Java program. Ensure the test cases cover valid inputs, invalid inputs, and edge cases. 
+    Use assertions to verify expected behavior.  Provide only the raw Java code without any markdown or formatting symbols.
+    Do NOT add the package name and class name at the top of the code."""
     prompt_template = ChatPromptTemplate.from_messages(
     [("system", system_template), ("user", "{text}")]
     
      
     )
-    prompt = prompt_template.invoke({"requirements": requirements,"text": user_code})
+    prompt = prompt_template.invoke({"text": user_code})
     test_case =  model.invoke(prompt)
     class_name = extract_class_name(test_case)
     output_dir = "../java/src/test/java/"
@@ -66,7 +61,7 @@ def run_maven_tests():
     except subprocess.CalledProcessError as e:
         return e.stdout, e.returncode
     
-def refactor_code_with_ai(user_code, requirements):
+def refactor_code_with_ai(user_code, requirements, reasons):
     """Use Vertex AI to refine the user code based on test output."""
     
 
@@ -80,17 +75,21 @@ def refactor_code_with_ai(user_code, requirements):
     
     ### Requirements ###
     {requirements}
+    
+    ### Reasons ###
 
+    {reasons} are that the previous AI generated java code did not pass the maven tests. 
+    Refactor the code to according to satisfy 
     
 
     Provide the updated Java code only and include explanations for the changes.
     """
     prompt_template = ChatPromptTemplate.from_messages(
-    [("system", system_template), ("user", "{text}")]
+    [("system", system_template), ("user", "{text}"), ("user", "{text2}")]
     
     
     )
-    prompt = prompt_template.invoke({"requirements": requirements,"text": user_code})
+    prompt = prompt_template.invoke({"requirements": requirements,"text": user_code, "text2": reasons})
      
     
     
@@ -105,13 +104,35 @@ def refactor_code_with_ai(user_code, requirements):
     except Exception as e:
         print(f"An error occurred while calling Vertex AI: {e}")
         return user_code
+
+def explain_failed_tests (test_output):
+    system_template = f"""Analyze the following Maven test output and explain why the test failed. 
+    Identify the root cause, mention the specific test failures. 
+    Provide only the raw Java code without any markdown or formatting symbols."""
+    prompt_template = ChatPromptTemplate.from_messages(
+    [("system", system_template), ("user", "{text}")]
     
+    )
+    prompt = prompt_template.invoke({"text": test_output})
+    try:
+        explanation = model.invoke(prompt)
+
+        
+        st.write(explanation)
+       
+        
+
+    except Exception as e:
+        print(f"An error occurred while calling Vertex AI: {e}")
+       
+
+      
 def handle_refactor_and_test(user_code, requirements):
     """Main workflow for refactoring and testing."""
     # test_output = ""  # Initialize test_output
-    refined_code = refactor_code_with_ai(user_code, requirements)
+    refined_code = refactor_code_with_ai(user_code, requirements, reasons = "")
     
-    generate_java_code_and_test(refined_code, requirements)
+    generate_java_code_and_test(refined_code)
     
 
     while True:
@@ -122,8 +143,11 @@ def handle_refactor_and_test(user_code, requirements):
             break
         else:
             print("Tests failed. Refactoring and retrying...")
-            refined_code = refactor_code_with_ai(user_code, requirements)
-            generate_java_code_and_test(refined_code, requirements)
+            reasons = explain_failed_tests(test_output)
+            refined_code = refactor_code_with_ai(user_code, requirements, reasons)
+            generate_java_code_and_test(refined_code)
+            
+            
             
             
 

@@ -5,6 +5,8 @@ from langchain_google_vertexai import VertexAI
 from langchain_core.prompts import ChatPromptTemplate
 import re
 
+
+
 def extract_class_name(java_code):
     """Extract the first class name from Java code."""
     match = re.search(r'\bclass\s+(\w+)', java_code)
