@@ -379,64 +379,84 @@ def display_chat_history():
 
 #Modified 0.2
 # Main Streamlit application function
+def load_private_key():
+    private_key_path = "C:\\Users\\mktha\\Downloads\\repoaikey.2025-02-20.private-key.pem"
+    try:
+        with open(private_key_path, "r") as key_file:
+            return key_file.read()
+    except FileNotFoundError:
+        print(f"Error: Private key file not found at {private_key_path}")
+        return None
+    except Exception as e:
+        print(f"Error loading private key: {str(e)}")
+        return None
+
+
 def main():
     st.set_page_config(page_title="GitHub Repositories Reader")
 
-
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
-    # if "chat_history" not in st.session_state:
-    #     st.session_state.chat_history = []
     if "messages" not in st.session_state:
         st.session_state.messages = []
-        #Newly added one for code
-    if "repo_data" not in st.session_state:  # Add repo_data initialization
+    if "repo_data" not in st.session_state:
         st.session_state.repo_data = {}
+
+    GITHUB_APP_ID = "1154382"  # Replace with actual App ID
+    INSTALL_URL = "https://github.com/apps/repoai-api"
 
     st.header(":red[REPO AI]")
     st.subheader(":blue[Superduper performance] :rocket:")
 
-    # Display chat history if available
-    # if st.session_state.chat_history:
-    # display_chat_history()
-
+    with st.sidebar:
+        st.header("GitHub Integration")
+        st.markdown(f"[Click here to install RepoAI]({INSTALL_URL}) :link:")
+        st.session_state.GITHUB_REPOSITORY = st.text_input("Enter your GitHub Repository (e.g., owner/repo)")
 
     github_url = st.text_input("Enter GitHub repository URL:")
     user_question = st.chat_input("Ask a question about your GitHub repository:")
 
-    #New one
     if github_url:
-    # Fetch data only if it's not already fetched for the current session
         if not st.session_state.get("repo_data_fetched", False):
             with st.spinner("Fetching repository contents..."):
-            # Fetch repository contents and create a vector store
                 repo_data, vector_store = read_all_repo_files(github_url, github_token)
 
             if repo_data:
-                # Save the fetched repository data and vector store in session state
                 st.session_state.repo_data = repo_data
                 st.session_state.vector_store = vector_store
-                st.session_state.repo_data_fetched = True  # Mark as fetched
-
-                # Initialize the conversation chain
+                st.session_state.repo_data_fetched = True
                 st.session_state.conversation = get_conversation_chain(vector_store)
-
             else:
                 st.error("Failed to fetch content from GitHub.")
-    else:
-        st.info("Please put a GitHub Repository Link for Data fetching")
 
-    # Process the user's question
+    elif st.session_state.GITHUB_REPOSITORY:
+        wrapper = GitHubAPIWrapper(
+            github_repository=st.session_state.GITHUB_REPOSITORY,
+            github_app_id=GITHUB_APP_ID,
+            github_app_private_key=load_private_key()
+        )
+
+        st.success("Connected to GitHub successfully!")
+        repo = wrapper.github.get_repo(st.session_state.GITHUB_REPOSITORY)
+
+        st.subheader("Open Issues")
+        st.write(wrapper.parse_issues(repo.get_issues(state="open")))
+
+        st.subheader("Pull Requests")
+        st.write(wrapper.parse_pull_requests(repo.get_pulls()))
+
+        st.subheader("Repository Files")
+        st.write(wrapper.list_files_in_main_branch())
+
+        if st.button("Create Test Branch"):
+            result = wrapper.create_branch("test_branch")
+            st.write(result)
+    else:
+        st.info("Please install the RepoAI GitHub App and enter your repository link.")
+
     if user_question:
-        # if st.session_state.get("conversation"):
-            handle_user_input(user_question)
-            display_chat_history()
-        # else:
-        #     st.error("Conversation chain not initialized. Please check the repository link.")
-    # if user_question and st.session_state.get("conversation"):
-    #     handle_user_input(user_question)
-    # elif user_question:
-    #     st.error("Conversation chain not initialized. Please check the repository link.")
+        handle_user_input(user_question)
+        display_chat_history()
 
 if __name__ == "__main__":
     main()
