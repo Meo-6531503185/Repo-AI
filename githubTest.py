@@ -241,8 +241,51 @@ class GitHubAPIWrapper(BaseModel):
             "At least 1000 branches exist with named derived from "
             f"proposed_branch_name: `{proposed_branch_name}`"
         )
+        
+    def set_active_branch(self, branch_name: str) -> str:
+        """Equivalent to `git checkout branch_name` for this Agent.
+        Clones formatting from Github.
+
+        Returns an Error (as a string) if branch doesn't exist.
+        """
+        curr_branches = [
+            branch.name for branch in self.github_repo_instance.get_branches()
+        ]
+        if branch_name in curr_branches:
+            self.active_branch = branch_name
+            return f"Switched to branch `{branch_name}`"
+        else:
+            return (
+                f"Error {branch_name} does not exist,"
+                f"in repo with current branches: {str(curr_branches)}"
+            )
+            
+    def delete_branch(self, active_branch: str) -> str:
+        """
+        Deletes a branch from the repo
+        Parameters:
+            active_branch(str): Where the branch is
+        Returns:
+            str: Success or failure message
+        """
+        if self.active_branch == self.github_base_branch:
+            return (
+                "You're attempting to delete the directly"
+                f"to the {self.github_base_branch} branch, which is protected. "
+                "Please create a new branch and try again."
+            )
+        try:
+            branch_name = active_branch  # Replace with the branch you want to delete
+            ref = f"heads/{branch_name}" 
+            self.github_repo_instance.get_git_ref(ref).delete()
+              
+            return f"Branch '{branch_name}' deleted successfully."
+        except Exception as e:
+            return "Unable to delete branch due to error:\n" + str(e)
+
+
     def create_file(self, file_query: str) -> str:
-        wrapper.active_branch = "test_branch"
+    
         if self.active_branch == self.github_base_branch:
             return (
                 "You're attempting to commit to the directly to the"
@@ -299,7 +342,7 @@ class GitHubAPIWrapper(BaseModel):
             )
             
     def update_file(self, file_query: str) -> str:
-        wrapper.active_branch = "test_branch"
+        
         """
         Updates a file with new content.
         Parameters:
@@ -357,7 +400,7 @@ class GitHubAPIWrapper(BaseModel):
         except Exception as e:
             return "Unable to update file due to error:\n" + str(e)
     def delete_file(self, file_path: str) -> str:
-        wrapper.active_branch = "test_branch"
+        
         """
         Deletes a file from the repo
         Parameters:
@@ -392,32 +435,36 @@ class GitHubAPIWrapper(BaseModel):
 wrapper = GitHubAPIWrapper(
     github_repository = "moepyaePK/dormbooking"
 ,
-    github_app_id="1116098",
-   github_app_private_key = "C:\\Users\\user\\Documents\\Langchain_py\\dorm-bookinng-with-iris.2025-01-18.private-key.pem"
+    github_app_id="1154382",
+   github_app_private_key = "C:\\Users\\user\\Downloads\\repoai-api.2025-02-22.private-key.pem"
 )
 
 
 
-print(wrapper)
+# print(wrapper.github_base_branch)
+# print(wrapper.active_branch)
 
-g = wrapper.github
-repo = g.get_repo("moepyaePK/dormbooking")
-issues = repo.get_issues(state="open")  # This fetches open issues from the repository
+# g = wrapper.github d nha khu ka ma lo tot buu but d tine for knowledge atwat htr htr dr
+# repo = g.get_repo("moepyaePK/dormbooking")
+# issues = wrapper.github_repo_instance.get_issues(state="open")  # This fetches open issues from the repository
 
-# Now calling the method to parse the issues
-# parsed_issues = parse_issues(g, issues)
-# parsed_pull_requests = parse_pull_requests(g, repo.get_pulls())
 
 
 
 
 print(wrapper.parse_issues(wrapper.github_repo_instance.get_issues(state="open")))
-print(wrapper.parse_pull_requests(wrapper.github_repo_instance.get_pulls()))
-print(wrapper.list_files_in_main_branch())
-# print(wrapper.create_branch("test_branch"))
+# print(wrapper.parse_pull_requests(wrapper.github_repo_instance.get_pulls()))
+# print(wrapper.list_files_in_main_branch())
+# print(wrapper.create_branch("meo_branch"))
+print(wrapper.create_branch("mk_branch"))
+
+
+print(wrapper.set_active_branch("mk_branch"))
+# print(wrapper.delete_branch("mk_branch"))
+# print(wrapper.delete_branch("test_branch"))
 # print(wrapper.create_file("test_branch\test.txt\nThis is a test file."))
 
-print(wrapper.read_file("L7Info.java"))
+# print(wrapper.read_file("L7Info.java"))
 
 # print(wrapper.update_file("test_branch\test.txt\nOLD <<<<\nhis is a test file.\n>>>> OLD\nNEW <<<<\nThis is a new test file.\n>>>> NEW"))
 
