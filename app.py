@@ -22,6 +22,7 @@ from langchain.embeddings import GooglePalmEmbeddings
 import google.auth
 from githubTest import *
 from data_fetch.fetching import fetch_file_content, fetch_all_files_from_repo, fetch_repo_contents
+from langchain_groq import ChatGroq
 
 load_dotenv()
 github_token = os.getenv("GITHUB_TOKEN")
@@ -77,24 +78,31 @@ def get_vector_store(text_chunks):
     vector_store = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vector_store
 
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 def get_conversation_chain(vector_store):
 
     retriever = vector_store.as_retriever(
         search_type = "mmr",
         search_kwargs = {"k":8},
     )
-    llm = VertexAI(
-        # project="coderefactoringai",
-        project = "repoai-440607",
-        location="us-central1",
-        # model="gemini-1.5-flash-002",
-        model = "gemini-1.5-pro",
-        model_kwargs={
-            "temperature": 0.7,
-            "max_length": 600,
-            "top_p": 0.95,
-            "top_k": 50,
-        },
+    # llm = VertexAI(
+    #     # project="coderefactoringai",
+    #     project = "repoai-440607",
+    #     location="us-central1",
+    #     # model="gemini-1.5-flash-002",
+    #     model = "gemini-1.5-pro",
+    #     model_kwargs={
+    #         "temperature": 0.7,
+    #         "max_length": 600,
+    #         "top_p": 0.95,
+    #         "top_k": 50,
+    #     },
+    # )
+
+    llm = ChatGroq(
+        model= "deepseek-r1-distill-llama-70b",
+        api_key = GROQ_API_KEY
     )
 
     memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
@@ -222,13 +230,7 @@ def refactor_code(file_content):
 
     return f"### Explanation of Refactored Code:\n{explanation}\n\n### Refactored Code:\n```python\n{code_snippet}\n```"
 
-    # Display explanation and refactored code
-    # st.write("### Explanation of Refactored Code:")
-    # st.write(explanation)  # Display the explanation of why the code was refactored this way
-
-    # st.write("### Refactored Code:")
-    # st.code(code_snippet, language='python')  # Display the refactored code
-
+ 
 
 # Function to suggest features
 def suggest_features(file_content):
@@ -252,13 +254,6 @@ Here is the code:
 
     return f"### Explanation\n{explanation}\n\n### Modified Code\n```python\n{code_snippet}\n```" if code_snippet else f"### Explanation\n{explanation}"
 
-
-    # Display explanation and suggested code
-    # st.write("### Explanation")
-    # st.write(explanation)
-    # if code_snippet:
-    #     st.write("### Modified Code")
-    #     st.code(code_snippet, language='python')
 
 #New fun for code
 def handle_user_input(user_question):
@@ -314,18 +309,11 @@ def handle_user_input(user_question):
             bot_reply = response.get("chat_history", ["No response."])[-1].content
 
             # Append to chat history
-            # if not st.session_state.messages or st.session_state.messages[-1]["content"] != bot_reply:
             if bot_reply:
                 st.session_state.messages.append({"role": "user", "content": user_question})
                 st.session_state.messages.append({"role": "assistant", "content": bot_reply})
             return bot_reply
-            # st.session_state.chat_history = response['chat_history']
-
-            # for i, message in enumerate(st.session_state.chat_history):
-            #     if i % 2 == 0:
-            #         st.write(f"User: {message.content}")
-            #     else:
-            #         st.write(f"Bot: {message.content}")
+           
     else:
         st.error("Conversation chain is not initialized. Please provide a repository URL first.")
 
@@ -343,39 +331,6 @@ def display_chat_history():
         # with st.chat_message(message["role"]):
         #     st.markdown(message["content"];
 
-
-    # st.markdown(
-    #     """
-    #     <style>
-    #     .chat-container {
-    #         background-color: #f0f4f7;
-    #         padding: 10px;
-    #         border-radius: 8px;
-    #         margin-bottom: 20px;
-    #         max-height: 300px;
-    #         overflow-y: auto;
-    #     }
-    #     .user-message {
-    #         color: #333333;
-    #         font-weight: bold;
-    #         margin-bottom: 8px;
-    #     }
-    #     .bot-message {
-    #         color: #0056b3;
-    #         margin-bottom: 8px;
-    #     }
-    #     </style>
-    #     """,
-    #     unsafe_allow_html=True,
-    # )
-
-    # st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-    # for i, message in enumerate(st.session_state.chat_history):
-    #     if i % 2 == 0:
-    #         st.markdown(f'<div class="user-message"> User: {message.content}</div>', unsafe_allow_html=True)
-    #     else:
-    #         st.markdown(f'<div class="bot-message"> Bot: {message.content}</div>', unsafe_allow_html=True)
-    # st.markdown('</div>', unsafe_allow_html=True)
 
 #Modified 0.2
 # Main Streamlit application function
@@ -403,9 +358,6 @@ def main():
     st.header(":red[REPO AI]")
     st.subheader(":blue[Superduper performance] :rocket:")
 
-    # Display chat history if available
-    # if st.session_state.chat_history:
-    # display_chat_history()
 
     #For Side bar ( Github Extra features)
     with st.sidebar:
@@ -469,7 +421,7 @@ def main():
 
         # Create a branch button
         if st.button("Create Test Branch"):
-            result = wrapper.create_branch("test_branch")
+            result = wrapper.create_branch("Hello_branch")
             st.write(result)
 
     else:
@@ -477,15 +429,8 @@ def main():
 
     # Process the user's question
     if user_question:
-        # if st.session_state.get("conversation"):
             handle_user_input(user_question)
             display_chat_history()
-        # else:
-        #     st.error("Conversation chain not initialized. Please check the repository link.")
-    # if user_question and st.session_state.get("conversation"):
-    #     handle_user_input(user_question)
-    # elif user_question:
-    #     st.error("Conversation chain not initialized. Please check the repository link.")
 
 if __name__ == "__main__":
     main()
