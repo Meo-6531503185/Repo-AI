@@ -61,35 +61,7 @@ def run_maven_tests():
     except subprocess.CalledProcessError as e:
         return e.stdout, e.returncode
 
-# def analyze_test_failures(test_output):
-#     system_template = """
-#     Analyze the following Maven test output and determine the cause of failure. 
-#     Explain why the test failed and classify whether the issue is in the class implementation or the test cases.
-    
-#     Use logical reasoning rather than relying on specific keywords. Identify:
-#     - Whether the failure is due to missing methods, incorrect method signatures, or unexpected exceptions (likely requiring class refactoring).
-#     - Whether the failure is due to incorrect test expectations, improper assertions, or flawed test logic (likely requiring test case refactoring).
-#     - If the failure is ambiguous, suggest manual review.
 
-#     Based on your reasoning, determine the appropriate action:
-#     - If the class is incorrect, return "Regenerate Class File".
-#     - If the test cases need fixing, return "Regenerate Test Cases".
-#     - If it is unclear, return "Manual Review Needed".
-
-#     Provide a clear and structured explanation before your decision.
-#     """
-
-#     prompt_template = ChatPromptTemplate.from_messages(
-#         [("system", system_template), ("user", "{text}")]
-#     )
-
-#     prompt = prompt_template.invoke({"text": test_output})
-
-#     try:
-#         explanation = model.invoke(prompt)
-#         st.write(explanation)
-#     except Exception as e:
-#         print(f"An error occurred while processing test output: {e}")
 
 def analyze_test_failures(test_output, user_code, requirements):
     system_template = """
@@ -191,6 +163,7 @@ def handle_refactor_and_test(user_code, requirements):
             #     print("Manual review needed.")
             #     refined_code = refactor_code_with_ai(user_code, requirements, test_output)
                 
+
 
 def main():
     """Streamlit UI for AI and Maven workflow."""

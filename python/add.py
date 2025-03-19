@@ -48,18 +48,15 @@ from githubTest import *
 from langchain_core.prompts import ChatPromptTemplate
 
 from fetching import fetch_file_content, fetch_all_files_from_repo, fetch_repo_contents
-import jwt
-import time
 
 
 
 
 load_dotenv()
 
-github_token = os.getenv("GITHUB_APP_ID")
-github_private_file = os.getenv("GITHUB_PRIVATE_KEY_PATH")
+github_token = os.getenv("GITHUB_TOKEN")
 
-if github_token and github_private_file:
+if github_token:
 
     print("GitHub Token loaded successfully")
 
@@ -71,109 +68,42 @@ else:
 
 #Untouch
 
-import time
-import jwt
-import requests
-import streamlit as st
+def read_all_repo_files(github_url, github_token):
 
-
-def fetch_repo_contents(api_url, headers):
-    """Fetch the contents of the entire repository."""
-    response = requests.get(api_url, headers=headers)
-    
-    if response.status_code != 200:
-        st.error(f"Failed to retrieve files from GitHub. Status code: {response.status_code}")
-        return []
-    return response.json()
-
-
-def fetch_all_files_from_repo(api_url, headers):
-    """Fetch all files from a GitHub repository, including files inside subfolders."""
-    all_files = []
-    repo_contents = fetch_repo_contents(api_url, headers)
-
-    for file_info in repo_contents:
-        if file_info["type"] == "file":
-            all_files.append({
-                "name": file_info["name"],
-                "download_url": file_info["download_url"],  # Using download_url directly
-                "path": file_info["path"]
-            })
-        elif file_info["type"] == "dir":
-            # If it's a directory, recurse into it
-            subfolder_url = file_info["url"]
-            all_files += fetch_all_files_from_repo(subfolder_url, headers)
-
-    return all_files
-
-
-def fetch_file_content(file_url):
-    """Fetch the content of a single file."""
-    response = requests.get(file_url)
-    if response.status_code == 200:
-        return response.text
-    else:
-        st.warning(f"Failed to retrieve file: {file_url}")
-        return ""
-
-
-def read_all_repo_files(github_url, github_token, github_private_file):
     """Read all files in a repository and store them for later queries."""
-    # Extract the owner and repo from the URL
+
     parts = github_url.rstrip("/").split("/")
+
     owner, repo = parts[-2], parts[-1]
 
-    # GitHub API URL for repository contents
     api_url = f"https://api.github.com/repos/{owner}/{repo}/contents"
 
-    # Load GitHub App private key
-    with open(github_private_file, "r") as f:
-        private_key = f.read()
+    headers = {"Authorization": f"token {github_token}"}
 
-    # Create a JWT for authentication
-    payload = {
-        "iat": int(time.time()),  # Issued at time
-        "exp": int(time.time()) + (10 * 60),  # Expires in 10 minutes
-        "iss": github_token,  # GitHub App ID
-    }
-    jwt_token = jwt.encode(payload, private_key, algorithm="RS256")
 
-    # Get the installation ID
-    headers = {
-        "Authorization": f"Bearer {jwt_token}",
-        "Accept": "application/vnd.github+json"
-    }
-    response = requests.get("https://api.github.com/app/installations", headers=headers)
-    installations = response.json()
-    installation_id = installations[0]["id"]  # Use the first installation
 
-    # Exchange JWT for an installation access token
-    response = requests.post(
-        f"https://api.github.com/app/installations/{installation_id}/access_tokens",
-        headers=headers
-    )
-    installation_token = response.json()["token"]
-
-    # Use the installation token for API requests
-    headers = {
-        "Authorization": f"token {installation_token}",
-        "Accept": "application/vnd.github+json"
-    }
-
-    # Fetch all files from the repository
     all_files = fetch_all_files_from_repo(api_url, headers)
 
-    # Prepare data and chunking
+
+
     repo_data = {}
+
     all_file_chunks = []
 
     for file in all_files:
-        file_content = fetch_file_content(file.get("download_url"))
-        chunks = get_text_chunks(file_content)  # Assuming get_text_chunks exists
+
+        file_content = fetch_file_content(file["url"])
+
+        chunks = get_text_chunks(file_content)
+
         all_file_chunks.extend(chunks)
+
         repo_data[file["path"]] = file_content
 
-    # Generate vector store from chunks
+    
+
+    # Generate the vector store from the chunks
+
     vector_store = get_vector_store(all_file_chunks)
 
     return repo_data, vector_store
@@ -380,7 +310,7 @@ def analyze_test_failures(test_output, user_code, requirements):
 
     try:
         explanation = model.invoke(prompt)
-        
+        st.write(explanation)
 
         # Automatically trigger refactoring based on AI's analysis
         if "Regenerate Class File" in explanation:
@@ -429,7 +359,7 @@ def refactor_code_with_ai(user_code, requirements, reasons):
         print(f"An error occurred while calling Vertex AI: {e}")
         return user_code
 
-def handle_refactor_and_test(user_question):
+def handle_refactor_and_test( user_question):
     print("Handling refactor and test...")
     match = re.search(r'["\']?([\w\-/]+(\.\w+))["\']?', user_question)
 
@@ -519,8 +449,6 @@ def extract_repo_info(url):
 
     return None, None  # Invalid URL format
 
-    
-
 
 
 def main():
@@ -594,7 +522,7 @@ def main():
 
                 with st.spinner(f"Fetching repository contents for {full_repo_name}..."):
 
-                    repo_data, vector_store = read_all_repo_files(full_repo_name, github_token, github_private_file)
+                    repo_data, vector_store = read_all_repo_files(full_repo_name, github_token)
 
 
 
@@ -621,17 +549,8 @@ def main():
 
 
     if user_question:
-        
-        refined_code = handle_refactor_and_test(user_question)
-        
-        if "push" in user_question.lower():
-            print("Push command detected, executing push process...")
-            st.write("Processing push request...")
-            # push_refactored_code_to_github(refined_code)
-    
-          
 
-       
+        handle_refactor_and_test(user_question)
 
         
 

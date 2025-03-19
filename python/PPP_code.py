@@ -1,10 +1,10 @@
+import subprocess
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 import streamlit as st
 from dotenv import load_dotenv
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain.llms import HuggingFaceHub
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
@@ -18,10 +18,11 @@ from google.oauth2 import service_account
 from langchain_google_vertexai import VertexAI
 from langchain_google_vertexai import VertexAIEmbeddings
 import google.generativeai as palm
-from langchain.embeddings import GooglePalmEmbeddings
 import google.auth
 from githubTest import *
-from data_fetch.fetching import fetch_file_content, fetch_all_files_from_repo, fetch_repo_contents
+from fetching import fetch_file_content, fetch_all_files_from_repo, fetch_repo_contents
+from langchain_core.prompts import ChatPromptTemplate
+
 
 load_dotenv()
 github_token = os.getenv("GITHUB_TOKEN")
@@ -31,14 +32,14 @@ else:
     print("GitHub Token not found")
 
 #Untouch
-def read_all_repo_files(github_url, github_token):
+def read_all_repo_files(github_url):
     """Read all files in a repository and store them for later queries."""
     parts = github_url.rstrip("/").split("/")
     owner, repo = parts[-2], parts[-1]
-    api_url = f"https://api.github.com/repos/{owner}/{repo}/contents"
+    repo_url = f"https://api.github.com/repos/{owner}/{repo}/contents/"
     headers = {"Authorization": f"token {github_token}"}
 
-    all_files = fetch_all_files_from_repo(api_url, headers)
+    all_files = fetch_all_files_from_repo(repo_url,headers)
 
     repo_data = {}
     all_file_chunks = []
@@ -70,7 +71,7 @@ def get_text_chunks(extracted_text):
 #Untouch
 def get_vector_store(text_chunks):
     # PROJECT_ID = "coderefactoringai"
-    PROJECT_ID = "repoai-440607"
+    PROJECT_ID = "langchain-iris-chatbot"
     LOCATION = "us-central1"
     vertexai.init(project=PROJECT_ID, location=LOCATION)
     embeddings = VertexAIEmbeddings(model_name="text-embedding-004")
@@ -85,7 +86,7 @@ def get_conversation_chain(vector_store):
     )
     llm = VertexAI(
         # project="coderefactoringai",
-        project = "repoai-440607",
+        project = "langchain-iris-chatbot",
         location="us-central1",
         # model="gemini-1.5-flash-002",
         model = "gemini-1.5-pro",
@@ -186,48 +187,36 @@ Here is the code:
     # st.write(response["answer"])
 
 
-def refactor_code(file_content):
-    """
-    Use AI to refactor the given code.
-    """
-    # st.subheader("Refactored Code:")
+def refactor_code_with_ai(user_code, requirements, reasons):
+    """Use Vertex AI to refine the user code based on test output."""
+    system_template = f"""
+    Refactor the following Java code to meet the requirements and address the issues and potential threats.
+    Ensure that the refactored code adheres to best practices and satisfies the user requirements. 
+    Do not explain the changes made. Just refactor the code. Do not add test cases or file name.
+    Provide only the raw Java code without any markdown or formatting symbols. Do not add the package name.
 
-    # # First, display the original code
-    # st.write("### Original Code:")
-    # st.code(file_content, language='python')  # Display the original code snippet
-
-
-    # Create the refactor query
-    refactor_query = f"""
-    Instruction:
-        "Act as an expert in code optimization and refactoring. Analyze the code that are got from fetching data from github repository link and generate a refactored version that:
-        Improves efficiency (performance)
-        Enhances readability and maintainability
-        Boosts scalability
-        DO NOT change function names or external dependencies.
-        Keep the functionality identical to the original code but you can modify the source code to improve better effiency, readability, maintainability and scalability and keep the output be the same.
-        Original Code:
-        {file_content}
-        Important feature: (To let the users know what changes made to their source code)
-        After refactoring, include a summary explaining what changes were made and how they help achieve the improvements and the modified code.
+    ### Requirements ###
+    {requirements}
+    
+    ### Reasons ###
+    {reasons} are the test outputs why the previous AI-generated Java code did not pass the Maven tests. 
+    Refactor the code accordingly to satisfy these issues.
     """
     
-    # Request the refactor from the AI model
-    response = st.session_state.conversation({"question": refactor_query})
-    # refactored_code
-
-    # Split the response into explanation and refactored code
-    explanation, code_snippet = split_explanation_and_code(response["answer"])
-
-    return f"### Explanation of Refactored Code:\n{explanation}\n\n### Refactored Code:\n```python\n{code_snippet}\n```"
-
-    # Display explanation and refactored code
-    # st.write("### Explanation of Refactored Code:")
-    # st.write(explanation)  # Display the explanation of why the code was refactored this way
-
-    # st.write("### Refactored Code:")
-    # st.code(code_snippet, language='python')  # Display the refactored code
-
+    prompt_template = ChatPromptTemplate.from_messages([
+        ("system", system_template),
+        ("user", "{text}"),
+        ("user", "{text2}")
+    ])
+    prompt = prompt_template.invoke({"requirements": requirements, "text": user_code, "text2": reasons})
+    
+    try:
+        refined_code = model.invoke(prompt)
+        print("AI successfully refined the code.")
+        return refined_code
+    except Exception as e:
+        print(f"An error occurred while calling Vertex AI: {e}")
+        return user_code
 
 # Function to suggest features
 def suggest_features(file_content):
@@ -258,7 +247,120 @@ Here is the code:
     # if code_snippet:
     #     st.write("### Modified Code")
     #     st.code(code_snippet, language='python')
+def extract_class_name(java_code):
+    """Extract the first class name from Java code."""
+    match = re.search(r'\bclass\s+(\w+)', java_code)
+    return match.group(1) if match else "GeneratedCode"
 
+model = VertexAI(model="gemini-1.5-pro")
+
+def generate_java_code_and_test(user_code):
+    """Generate Java source and test files based on user input."""
+    output_dir = "../java/src/main/java/"
+    os.makedirs(output_dir, exist_ok=True)
+
+    class_name = extract_class_name(user_code)
+    with open(os.path.join(output_dir, f"{class_name}.java"), "w") as file:
+        file.write(user_code)
+   
+    system_template = f"""Generate JUnit test cases for the following user's Java program based on the official guidelines from https://junit.org/junit5/docs/current/user-guide/#writing-tests. 
+Ensure the test cases cover valid inputs, invalid inputs, and edge cases. 
+
+Follow these best practices:
+- **Do NOT call private methods directly**; instead, test them indirectly through **public methods** such as getters and setters.
+- Use **assertions** to verify expected behavior.
+- Focus on **state validation** rather than implementation details.
+- If necessary, use setter methods to modify the object state before calling the tested methods.
+- Ensure edge cases, such as extreme values, null inputs (if applicable), and boundary conditions, are tested.
+  
+Provide only the raw Java code without any markdown or formatting symbols.  
+Do NOT add the package name and class name at the top of the code.
+"""
+    
+    prompt_template = ChatPromptTemplate.from_messages([
+        ("system", system_template),
+        ("user", "{text}")
+    ])
+    prompt = prompt_template.invoke({"text": user_code})
+    test_case = model.invoke(prompt)
+    
+    test_class_name = extract_class_name(test_case)
+    output_dir = "../java/src/test/java/"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    with open(os.path.join(output_dir, f"{test_class_name}.java"), "w") as file:
+        file.write(test_case)
+
+def run_maven_tests():
+    """Run Maven tests and return the output."""
+    maven_path = "C:\\Program Files\\apache-maven-3.9.5\\bin\\mvn.cmd"
+    project_path = r"C:\\Users\\user\\Documents\\RepoAI_Github\\Repo-AI\\java"
+    try:
+        result = subprocess.run([maven_path, "test"], cwd=project_path, capture_output=True, text=True, check=True)
+        return result.stdout, 0
+    except subprocess.CalledProcessError as e:
+        return e.stdout, e.returncode
+
+
+
+def analyze_test_failures(test_output, user_code, requirements):
+    system_template = """
+    Analyze the following Maven test output and determine the cause of failure. 
+    Explain why the test failed and classify whether the issue is in the class implementation or the test cases.
+    
+    Use logical reasoning rather than relying on specific keywords. Identify:
+    - Whether the failure is due to missing methods, incorrect method signatures, or unexpected exceptions (likely requiring class refactoring).
+    - Whether the failure is due to incorrect test expectations, improper assertions, or flawed test logic (likely requiring test case refactoring).
+    - If the failure is ambiguous, suggest manual review.
+
+    Based on your reasoning, determine the appropriate action:
+    - If the class is incorrect, return "Regenerate Class File".
+    - If the test cases need fixing, return "Regenerate Test Cases".
+    - If it is unclear, return "Manual Review Needed".
+
+    Provide a clear and structured explanation before your decision.
+    """
+
+    prompt_template = ChatPromptTemplate.from_messages(
+        [("system", system_template), ("user", "{text}")]
+    )
+
+    prompt = prompt_template.invoke({"text": test_output})
+
+    try:
+        explanation = model.invoke(prompt)
+        # st.write(explanation)
+
+        # Automatically trigger refactoring based on AI's analysis
+        if "Regenerate Class File" in explanation:
+            refined_code = refactor_code_with_ai(user_code, requirements, test_output)
+            st.write("Class file has been regenerated. Running new tests...")
+            generate_java_code_and_test(refined_code)
+
+        elif "Regenerate Test Cases" in explanation:
+            st.write("Test cases have issues. Generating updated test cases...")
+            generate_java_code_and_test(refined_code)
+
+        else:
+            st.write("Manual review is needed.")
+
+    except Exception as e:
+        print(f"An error occurred while processing test output: {e}")
+        
+def handle_refactor_and_test(user_code, requirements):
+    """Main workflow for refactoring and testing."""
+    refined_code = refactor_code_with_ai(user_code, requirements, reasons="")
+    generate_java_code_and_test(refined_code)
+    
+    while True:
+        test_output, test_code = run_maven_tests()
+
+        if test_code == 0:
+            print("All tests passed!")
+            break
+        else:
+            print("Tests failed. Analyzing reasons...")
+            analyze_test_failures(test_output, refined_code, requirements)
 #New fun for code
 def handle_user_input(user_question):
     if "conversation" in st.session_state:
@@ -294,7 +396,7 @@ def handle_user_input(user_question):
                 if "explain" in user_question.lower():
                     bot_reply = explain_code_detailed(file_content, user_question)
                 elif "refactor" in user_question.lower():
-                    bot_reply= refactor_code(file_content)
+                    handle_refactor_and_test(file_content, user_question)               
                 elif "suggest" in user_question.lower():
                     bot_reply= suggest_features(file_content)
                 else:
@@ -393,10 +495,10 @@ def main():
     if "repo_data" not in st.session_state:  # Add repo_data initialization
         st.session_state.repo_data = {}
 
-    if "GITHUB_APP_ID" not in st.session_state:
-        st.session_state.GITHUB_APP_ID = ""
-    if "GITHUB_PRIVATE_KEY_PATH" not in st.session_state:
-        st.session_state.GITHUB_PRIVATE_KEY_PATH = ""
+    # if "GITHUB_APP_ID" not in st.session_state:
+    #     st.session_state.GITHUB_APP_ID = ""
+    # if "GITHUB_PRIVATE_KEY_PATH" not in st.session_state:
+    #     st.session_state.GITHUB_PRIVATE_KEY_PATH = ""
     if "GITHUB_REPOSITORY" not in st.session_state:
         st.session_state.GITHUB_REPOSITORY = ""
 
@@ -408,11 +510,11 @@ def main():
     # display_chat_history()
 
     #For Side bar ( Github Extra features)
-    with st.sidebar:
-        st.header("GitHub Credentials (Optional)")
-        st.session_state.GITHUB_APP_ID = st.text_input("GitHub App ID", value=st.session_state.GITHUB_APP_ID)
-        st.session_state.GITHUB_PRIVATE_KEY_PATH = st.text_input("Private Key Path", value=st.session_state.GITHUB_PRIVATE_KEY_PATH)
-        st.session_state.GITHUB_REPOSITORY = st.text_input("GitHub Repository (e.g., owner/repo)", value=st.session_state.GITHUB_REPOSITORY)
+    # with st.sidebar:
+    #     st.header("GitHub Credentials (Optional)")
+    #     # st.session_state.GITHUB_APP_ID = st.text_input("GitHub App ID", value=st.session_state.GITHUB_APP_ID)
+    #     # st.session_state.GITHUB_PRIVATE_KEY_PATH = st.text_input("Private Key Path", value=st.session_state.GITHUB_PRIVATE_KEY_PATH)
+    #     st.session_state.GITHUB_REPOSITORY = st.text_input("GitHub Repository (e.g., owner/repo)", value=st.session_state.GITHUB_REPOSITORY)
 
 
     github_url = st.text_input("Enter GitHub repository URL:")
@@ -424,7 +526,7 @@ def main():
         if not st.session_state.get("repo_data_fetched", False):
             with st.spinner("Fetching repository contents..."):
             # Fetch repository contents and create a vector store
-                repo_data, vector_store = read_all_repo_files(github_url, github_token)
+                repo_data, vector_store = read_all_repo_files(github_url)
 
             if repo_data:
                 # Save the fetched repository data and vector store in session state
@@ -439,23 +541,25 @@ def main():
                 st.error("Failed to fetch content from GitHub.")
 
     #GitHub Credentials Handling
-    elif st.session_state.GITHUB_APP_ID and st.session_state.GITHUB_PRIVATE_KEY_PATH and st.session_state.GITHUB_REPOSITORY:
-        try:
-            with open(st.session_state.GITHUB_PRIVATE_KEY_PATH, "r") as key_file:
-                GITHUB_PRIVATE_KEY = key_file.read()
-        except FileNotFoundError:
-            st.error("Error: Private key file not found. Please provide a valid path.")
-            return
+    # elif st.session_state.GITHUB_APP_ID and st.session_state.GITHUB_PRIVATE_KEY_PATH and st.session_state.GITHUB_REPOSITORY:
+    # elif st.session_state.GITHUB_REPOSITORY:
+
+        # try:
+        #     with open(st.session_state.GITHUB_PRIVATE_KEY_PATH, "r") as key_file:
+        #         GITHUB_PRIVATE_KEY = key_file.read()
+        # except FileNotFoundError:
+        #     st.error("Error: Private key file not found. Please provide a valid path.")
+        #     return
         
 
         wrapper = GitHubAPIWrapper(
-            github_repository=st.session_state.GITHUB_REPOSITORY,
-            github_app_id=st.session_state.GITHUB_APP_ID,
-            github_app_private_key=GITHUB_PRIVATE_KEY
+            github_repository= github_url,
+            github_app_id= "1154382",
+            github_app_private_key="C:\\Users\\user\\Documents\\repoai-api.2025-02-22.private-key.pem"
         )
 
         st.success("Connected to GitHub successfully!")
-        repo = wrapper.github.get_repo(st.session_state.GITHUB_REPOSITORY)
+        repo = wrapper.github.get_repo()
 
         # Fetch and display issues & pull requests
         st.subheader("Open Issues")

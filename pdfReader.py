@@ -14,7 +14,7 @@ from langchain_community.embeddings import SentenceTransformerEmbeddings
 from langchain_community.chat_models import ChatOpenAI
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
-from htmlTemplates import css,bot_template,user_template
+from python.htmlTemplates import css,bot_template,user_template
 from langchain_core.runnables import RunnableLambda
 import google.generativeai as genai
 import requests

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="CoffeeMachineTest" time="0.054" tests="17" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="NQueensTest" time="0.01" tests="2" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -58,69 +58,12 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testSellSnackTartOutOfStock" classname="CoffeeMachineTest" time="0.005">
-    <system-out><![CDATA[Sorry, out of tarts!
+  <testcase name="testSolveNQueens_ValidInput" classname="NQueensTest" time="0.006">
+    <system-out><![CDATA[[Q]
 ]]></system-out>
   </testcase>
-  <testcase name="testSellSnackMochiOutOfStock" classname="CoffeeMachineTest" time="0.0">
-    <system-out><![CDATA[Sorry, out of mochi!
-]]></system-out>
-  </testcase>
-  <testcase name="testSellSnackBrownieSuccess" classname="CoffeeMachineTest" time="0.001">
-    <system-out><![CDATA[Enjoy your brownie!
-]]></system-out>
-  </testcase>
-  <testcase name="testSellSnackCookieOutOfStock" classname="CoffeeMachineTest" time="0.003">
-    <system-out><![CDATA[Sorry, out of cookies!
-]]></system-out>
-  </testcase>
-  <testcase name="testSellSnackInvalidChoice" classname="CoffeeMachineTest" time="0.0">
-    <system-out><![CDATA[Invalid choice.
-]]></system-out>
-  </testcase>
-  <testcase name="testMakeCoffeeNotEnoughCups" classname="CoffeeMachineTest" time="0.0">
-    <system-out><![CDATA[Sorry, not enough cups!
-]]></system-out>
-  </testcase>
-  <testcase name="testMakeCoffeeNotEnoughMilk" classname="CoffeeMachineTest" time="0.0">
-    <system-out><![CDATA[Sorry, not enough milk!
-]]></system-out>
-  </testcase>
-  <testcase name="testMakeCoffeeLatteSuccess" classname="CoffeeMachineTest" time="0.001">
-    <system-out><![CDATA[I have enough resources, making you a coffee!
-]]></system-out>
-  </testcase>
-  <testcase name="testMakeCoffeeNotEnoughBeans" classname="CoffeeMachineTest" time="0.004">
-    <system-out><![CDATA[Sorry, not enough coffee beans!
-]]></system-out>
-  </testcase>
-  <testcase name="testMakeCoffeeNotEnoughWater" classname="CoffeeMachineTest" time="0.002">
-    <system-out><![CDATA[Sorry, not enough water!
-]]></system-out>
-  </testcase>
-  <testcase name="testMakeCoffeeCappuccinoSuccess" classname="CoffeeMachineTest" time="0.004">
-    <system-out><![CDATA[I have enough resources, making you a coffee!
-]]></system-out>
-  </testcase>
-  <testcase name="testMakeCoffeeEspressoSuccess" classname="CoffeeMachineTest" time="0.002">
-    <system-out><![CDATA[I have enough resources, making you a coffee!
-]]></system-out>
-  </testcase>
-  <testcase name="testSellSnackTartSuccess" classname="CoffeeMachineTest" time="0.002">
-    <system-out><![CDATA[Enjoy your tart!
-]]></system-out>
-  </testcase>
-  <testcase name="testSellSnackMochiSuccess" classname="CoffeeMachineTest" time="0.0">
-    <system-out><![CDATA[Enjoy your mochi!
-]]></system-out>
-  </testcase>
-  <testcase name="testSellSnackCookieSuccess" classname="CoffeeMachineTest" time="0.002">
-    <system-out><![CDATA[Enjoy your cookie!
-]]></system-out>
-  </testcase>
-  <testcase name="testInitialState" classname="CoffeeMachineTest" time="0.0"/>
-  <testcase name="testSellSnackBrownieOutOfStock" classname="CoffeeMachineTest" time="0.0">
-    <system-out><![CDATA[Sorry, out of brownies!
+  <testcase name="testSolveNQueens_EdgeCase_Zero" classname="NQueensTest" time="0.004">
+    <system-out><![CDATA[[]
 ]]></system-out>
   </testcase>
 </testsuite>
