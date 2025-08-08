@@ -1,19 +1,15 @@
 from __future__ import annotations
-
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
-
+import github
 import requests
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, model_validator
-
 if TYPE_CHECKING:
     from github.Issue import Issue
     from github.PullRequest import PullRequest
 LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
 LANGSMITH_PROJECT="pr-puzzled-utilisation-86"
-
-
 def _import_tiktoken() -> Any:
     """Import tiktoken."""
     try:
@@ -26,7 +22,6 @@ def _import_tiktoken() -> Any:
     return tiktoken
 class GitHubAPIWrapper(BaseModel):
     """Wrapper for GitHub API."""
-
     github: Any = None  #: :meta private:
     github_repo_instance: Any = None  #: :meta private:
     github_repository: Optional[str] = None
@@ -34,11 +29,9 @@ class GitHubAPIWrapper(BaseModel):
     github_app_private_key: Optional[str] = None
     active_branch: Optional[str] = None
     github_base_branch: Optional[str] = None
-
     model_config = ConfigDict(
         extra="forbid",
     )
-
     @model_validator(mode="before")
     @classmethod
     def validate_environment(cls, values: Dict) -> Any:
@@ -46,22 +39,17 @@ class GitHubAPIWrapper(BaseModel):
         github_repository = get_from_dict_or_env(
             values, "github_repository", "GITHUB_REPOSITORY"
         )
-
         github_app_id = get_from_dict_or_env(values, "github_app_id", "GITHUB_APP_ID")
-
         github_app_private_key = get_from_dict_or_env(
             values, "github_app_private_key", "GITHUB_APP_PRIVATE_KEY"
         )
-
         try:
             from github import Auth, GithubIntegration
-
         except ImportError:
             raise ImportError(
                 "PyGithub is not installed. "
                 "Please install it with `pip install PyGithub`"
             )
-
         try:
             # interpret the key as a file path
             # fallback to interpreting as the key itself
@@ -69,7 +57,6 @@ class GitHubAPIWrapper(BaseModel):
                 private_key = f.read()
         except Exception:
             private_key = github_app_private_key
-
         auth = Auth.AppAuth(
             github_app_id,
             private_key,
@@ -94,21 +81,18 @@ class GitHubAPIWrapper(BaseModel):
         # create a GitHub instance:
         g = installation.get_github_for_installation()
         repo = g.get_repo(github_repository)
-
         github_base_branch = get_from_dict_or_env(
             values,
             "github_base_branch",
             "GITHUB_BASE_BRANCH",
             default=repo.default_branch,
         )
-
         active_branch = get_from_dict_or_env(
             values,
             "active_branch",
             "ACTIVE_BRANCH",
             default=repo.default_branch,
         )
-
         values["github"] = g
         values["github_repo_instance"] = repo
         values["github_repository"] = github_repository
@@ -116,12 +100,10 @@ class GitHubAPIWrapper(BaseModel):
         values["github_app_private_key"] = github_app_private_key
         values["active_branch"] = active_branch
         values["github_base_branch"] = github_base_branch
-
         return values
     def list_files_in_main_branch(self) -> str:
         """
         Fetches all files in the main branch of the repo.
-
         Returns:
             str: A plaintext report containing the paths and names of the files.
         """
@@ -135,7 +117,6 @@ class GitHubAPIWrapper(BaseModel):
                     files.extend(self._list_files(content.path))
                 else:
                     files.append(content.path)
-
             if files:
                 files_str = "\n".join(files)
                 return f"Found {len(files)} files in the main branch:\n{files_str}"
@@ -143,23 +124,17 @@ class GitHubAPIWrapper(BaseModel):
                 return "No files found in the main branch"
         except Exception as e:
             return str(e)
-        
-    
     def _list_files(self, directory_path: str) -> List[str]:
         files: List[str] = []
-
         contents = self.github_repo_instance.get_contents(
             directory_path, ref=self.active_branch
         )
-
         for content in contents:
             if content.type == "dir":
                 files.extend(self._list_files(content.path))
             else:
                 files.append(content.path)
         return files
-
-    
     def parse_issues(self, issues: List[Issue]) -> List[dict]:
         """
         Extracts title and number from each Issue and puts them in a dictionary
@@ -178,7 +153,6 @@ class GitHubAPIWrapper(BaseModel):
                 issue_dict["opened_by"] = opened_by
             parsed.append(issue_dict)
         return parsed
-    
     def parse_pull_requests(self, pull_requests: List[PullRequest]) -> List[dict]:
         """
         Extracts title and number from each Issue and puts them in a dictionary
@@ -204,12 +178,10 @@ class GitHubAPIWrapper(BaseModel):
         Equivalent to `git switch -c proposed_branch_name`
         If the proposed branch already exists, we append _v1 then _v2...
         until a unique name is found.
-
         Returns:
             str: A plaintext success message.
         """
         from github import GithubException
-
         i = 0
         new_branch_name = proposed_branch_name
         base_branch = self.github_repo_instance.get_branch(
@@ -241,11 +213,9 @@ class GitHubAPIWrapper(BaseModel):
             "At least 1000 branches exist with named derived from "
             f"proposed_branch_name: `{proposed_branch_name}`"
         )
-        
     def set_active_branch(self, branch_name: str) -> str:
         """Equivalent to `git checkout branch_name` for this Agent.
         Clones formatting from Github.
-
         Returns an Error (as a string) if branch doesn't exist.
         """
         curr_branches = [
@@ -259,7 +229,6 @@ class GitHubAPIWrapper(BaseModel):
                 f"Error {branch_name} does not exist,"
                 f"in repo with current branches: {str(curr_branches)}"
             )
-            
     def delete_branch(self, active_branch: str) -> str:
         """
         Deletes a branch from the repo
@@ -278,31 +247,26 @@ class GitHubAPIWrapper(BaseModel):
             branch_name = active_branch  # Replace with the branch you want to delete
             ref = f"heads/{branch_name}" 
             self.github_repo_instance.get_git_ref(ref).delete()
-              
             return f"Branch '{branch_name}' deleted successfully."
         except Exception as e:
             return "Unable to delete branch due to error:\n" + str(e)
-
-
     def create_file(self, file_query: str) -> str:
-    
         if self.active_branch == self.github_base_branch:
             return (
                 "You're attempting to commit to the directly to the"
                 f"{self.github_base_branch} branch, which is protected. "
                 "Please create a new branch and try again."
             )
-
         file_path = file_query.split("\n")[0]
         file_contents = file_query[len(file_path) + 2 :]
-
         try:
             try:
                 file = self.github_repo_instance.get_contents(
                     file_path, ref=self.active_branch
                 )
                 if file:
-                    return (
+                    self.update_file(file_query)
+                    print (
                         f"File already exists at `{file_path}` "
                         f"on branch `{self.active_branch}`. You must use "
                         "`update_file` to modify it."
@@ -310,7 +274,6 @@ class GitHubAPIWrapper(BaseModel):
             except Exception:
                 # expected behavior, file shouldn't exist yet
                 pass
-
             self.github_repo_instance.create_file(
                 path=file_path,
                 message="Create " + file_path,
@@ -320,7 +283,6 @@ class GitHubAPIWrapper(BaseModel):
             return "Created file " + file_path
         except Exception as e:
             return "Unable to make file due to error:\n" + str(e)
-        
     def read_file(self, file_path: str) -> str:
         """
         Read a file from this agent's branch, defined by self.active_branch,
@@ -340,9 +302,7 @@ class GitHubAPIWrapper(BaseModel):
                 f"File not found `{file_path}` on branch"
                 f"`{self.active_branch}`. Error: {str(e)}"
             )
-            
     def update_file(self, file_query: str) -> str:
-        
         """
         Updates a file with new content.
         Parameters:
@@ -374,19 +334,16 @@ class GitHubAPIWrapper(BaseModel):
             new_file_contents = (
                 file_query.split("NEW <<<<")[1].split(">>>> NEW")[0].strip()
             )
-
             file_content = self.read_file(file_path)
             updated_file_content = file_content.replace(
                 old_file_contents, new_file_contents
             )
-
             if file_content == updated_file_content:
                 return (
                     "File content was not updated because old content was not found."
                     "It may be helpful to use the read_file action to get "
                     "the current file contents."
                 )
-
             self.github_repo_instance.update_file(
                 path=file_path,
                 message="Update " + str(file_path),
@@ -400,7 +357,6 @@ class GitHubAPIWrapper(BaseModel):
         except Exception as e:
             return "Unable to update file due to error:\n" + str(e)
     def delete_file(self, file_path: str) -> str:
-        
         """
         Deletes a file from the repo
         Parameters:
@@ -426,47 +382,30 @@ class GitHubAPIWrapper(BaseModel):
             return "Deleted file " + file_path
         except Exception as e:
             return "Unable to delete file due to error:\n" + str(e)
-
-
-
-
-
-    
 wrapper = GitHubAPIWrapper(
     github_repository = "moepyaePK/dormbooking"
 ,
     github_app_id="1154382",
    github_app_private_key = "C:\\Users\\user\\Documents\\repoai-api.2025-02-22.private-key.pem"
 )
-
-
-
 # print(wrapper.github_base_branch)
 # print(wrapper.active_branch)
-
 # g = wrapper.github d nha khu ka ma lo tot buu but d tine for knowledge atwat htr htr dr
 # repo = g.get_repo("moepyaePK/dormbooking")
 # issues = wrapper.github_repo_instance.get_issues(state="open")  # This fetches open issues from the repository
-
-
-
-
-
 # print(wrapper.parse_issues(wrapper.github_repo_instance.get_issues(state="open")))
 # print(wrapper.parse_pull_requests(wrapper.github_repo_instance.get_pulls()))
 # print(wrapper.list_files_in_main_branch())
-# print(wrapper.create_branch("meo_branch"))
+# print(wrapper.create_branch("test_branch"))
 # print(wrapper.create_branch("mk_branch"))
-
-
 # print(wrapper.set_active_branch("mk_branch"))
 # print(wrapper.delete_branch("mk_branch"))
 # print(wrapper.delete_branch("test_branch"))
 # print(wrapper.create_file("test_branch\test.txt\nThis is a test file."))
-
 # print(wrapper.read_file("L7Info.java"))
-
 # print(wrapper.update_file("test_branch\test.txt\nOLD <<<<\nhis is a test file.\n>>>> OLD\nNEW <<<<\nThis is a new test file.\n>>>> NEW"))
-
 # print(wrapper.delete_file("test_branch\test.txt"))
-    
+  # Remaining requests
+# g = github.Github("1154382", "C:\\Users\\user\\Documents\\repoai-api.2025-02-22.private-key.pem")
+# rate_limit = g.get_rate_limit()
+# print(rate_limit.core.remaining)

@@ -18,14 +18,12 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
 CalculatorTest.testInvalidOperator -- Time elapsed: 0.003 s <<< ERROR!
 java.lang.Error: 
 Unresolved compilation problems: 
@@ -42,14 +40,12 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
 CalculatorTest.testGetRemainderPositiveNumbers -- Time elapsed: 0.004 s <<< ERROR!
 java.lang.Error: 
 Unresolved compilation problems: 
@@ -66,14 +62,12 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
 CalculatorTest.testGetRemainderNegativeNumbers -- Time elapsed: 0.002 s <<< ERROR!
 java.lang.Error: 
 Unresolved compilation problems: 
@@ -90,14 +84,12 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
 CalculatorTest.testMultiplication -- Time elapsed: 0.003 s <<< ERROR!
 java.lang.Error: 
 Unresolved compilation problems: 
@@ -114,14 +106,12 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
 CalculatorTest.testAddition -- Time elapsed: 0.001 s <<< ERROR!
 java.lang.Error: 
 Unresolved compilation problems: 
@@ -138,14 +128,12 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
 CalculatorTest.testGetRemainderDivisionByZero -- Time elapsed: 0 s <<< ERROR!
 java.lang.Error: 
 Unresolved compilation problems: 
@@ -162,14 +150,12 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
 CalculatorTest.testDivision -- Time elapsed: 0 s <<< ERROR!
 java.lang.Error: 
 Unresolved compilation problems: 
@@ -186,14 +172,12 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
 CalculatorTest.testSubtraction -- Time elapsed: 0.001 s <<< ERROR!
 java.lang.Error: 
 Unresolved compilation problems: 
@@ -210,11 +194,9 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-

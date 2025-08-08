@@ -74,7 +74,6 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -99,7 +98,6 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -124,7 +122,6 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -149,7 +146,6 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -174,7 +170,6 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -199,7 +194,6 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -224,7 +218,6 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -249,7 +242,6 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -274,7 +266,6 @@ Unresolved compilation problems:
 	The method divide(int, int) is undefined for the type Calculator
 	The method divide(double, double) is undefined for the type Calculator
 	The method calculate(int, int, char) is undefined for the type Calculator
-
 	at CalculatorTest.<init>(CalculatorTest.java:37)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)

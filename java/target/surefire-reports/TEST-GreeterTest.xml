@@ -62,7 +62,6 @@
     <error message="Unresolved compilation problem: &#10;	Syntax error on token(s), misplaced construct(s)&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
 Unresolved compilation problem: 
 	Syntax error on token(s), misplaced construct(s)
-
 	at GreeterTest.<init>(GreeterTest.java:4)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -75,7 +74,6 @@ Unresolved compilation problem:
     <error message="Unresolved compilation problem: &#10;	Syntax error on token(s), misplaced construct(s)&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
 Unresolved compilation problem: 
 	Syntax error on token(s), misplaced construct(s)
-
 	at GreeterTest.<init>(GreeterTest.java:4)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)

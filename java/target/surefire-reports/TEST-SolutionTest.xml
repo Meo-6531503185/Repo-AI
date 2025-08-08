@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="IceCreamShopTests" time="0.053" tests="5" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="SolutionTest" time="0.014" tests="6" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -15,7 +15,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="US"/>
     <property name="sun.boot.library.path" value="C:\Program Files\Java\jdk-21\bin"/>
-    <property name="sun.java.command" value="C:\Users\user\AppData\Local\Temp\surefire14423369555734683221\surefirebooter-20250209171229302_3.jar C:\Users\user\AppData\Local\Temp\surefire14423369555734683221 2025-02-09T17-12-29_058-jvmRun1 surefire-20250209171229302_1tmp surefire_0-20250209171229302_2tmp"/>
+    <property name="sun.java.command" value="C:\Users\user\AppData\Local\Temp\surefire359945383827741354\surefirebooter-20250331124555622_3.jar C:\Users\user\AppData\Local\Temp\surefire359945383827741354 2025-03-31T12-45-55_386-jvmRun1 surefire-20250331124555622_1tmp surefire_0-20250331124555622_2tmp"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="C:\Users\user\Documents\RepoAI_Github\Repo-AI\java\target\test-classes;C:\Users\user\Documents\RepoAI_Github\Repo-AI\java\target\classes;C:\Users\user\.m2\repository\org\junit\jupiter\junit-jupiter-api\5.10.0\junit-jupiter-api-5.10.0.jar;C:\Users\user\.m2\repository\org\opentest4j\opentest4j\1.3.0\opentest4j-1.3.0.jar;C:\Users\user\.m2\repository\org\junit\platform\junit-platform-commons\1.10.0\junit-platform-commons-1.10.0.jar;C:\Users\user\.m2\repository\org\apiguardian\apiguardian-api\1.1.2\apiguardian-api-1.1.2.jar;C:\Users\user\.m2\repository\org\junit\jupiter\junit-jupiter-engine\5.10.0\junit-jupiter-engine-5.10.0.jar;C:\Users\user\.m2\repository\org\junit\platform\junit-platform-engine\1.10.0\junit-platform-engine-1.10.0.jar;"/>
     <property name="sun.cpu.endian" value="little"/>
@@ -30,7 +30,7 @@
     <property name="line.separator" value="&#10;"/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
-    <property name="surefire.real.class.path" value="C:\Users\user\AppData\Local\Temp\surefire14423369555734683221\surefirebooter-20250209171229302_3.jar"/>
+    <property name="surefire.real.class.path" value="C:\Users\user\AppData\Local\Temp\surefire359945383827741354\surefirebooter-20250331124555622_3.jar"/>
     <property name="user.script" value=""/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="java.runtime.version" value="21.0.1+12-LTS-29"/>
@@ -58,128 +58,10 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testEmptyInput" classname="IceCreamShopTests" time="0.031">
-    <system-out><![CDATA[Welcome to the Ice Cream Shop!
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): Sorry, we don't have that flavor. Please try again.
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): Thank you for your purchase! Your final total is: $0.0
-]]></system-out>
-  </testcase>
-  <testcase name="testValidInput" classname="IceCreamShopTests" time="0.005">
-    <system-out><![CDATA[Welcome to the Ice Cream Shop!
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): vanilla added to your order. Current total: $2.5
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): Thank you for your purchase! Your final total is: $2.5
-]]></system-out>
-  </testcase>
-  <testcase name="testMultipleOrders" classname="IceCreamShopTests" time="0.003">
-    <system-out><![CDATA[Welcome to the Ice Cream Shop!
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): vanilla added to your order. Current total: $2.5
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): chocolate added to your order. Current total: $5.25
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): strawberry added to your order. Current total: $8.25
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): Thank you for your purchase! Your final total is: $8.25
-]]></system-out>
-  </testcase>
-  <testcase name="testCaseSensitivity" classname="IceCreamShopTests" time="0.003">
-    <system-out><![CDATA[Welcome to the Ice Cream Shop!
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): chocolate added to your order. Current total: $2.75
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): Thank you for your purchase! Your final total is: $2.75
-]]></system-out>
-  </testcase>
-  <testcase name="testInvalidInput" classname="IceCreamShopTests" time="0.004">
-    <system-out><![CDATA[Welcome to the Ice Cream Shop!
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): Sorry, we don't have that flavor. Please try again.
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): chocolate added to your order. Current total: $2.75
-Menu:
-mint - $3.25
-strawberry - $3.0
-oreo - $3.5
-vanilla - $2.5
-chocolate - $2.75
-cookie dough - $3.5
-Enter the flavor you want to buy (or type 'exit' to finish): Thank you for your purchase! Your final total is: $2.75
-]]></system-out>
-  </testcase>
+  <testcase name="testBubbleSortAndSearch_targetAtBeginning" classname="SolutionTest" time="0.005"/>
+  <testcase name="testBubbleSortAndSearch_emptyArray" classname="SolutionTest" time="0.001"/>
+  <testcase name="testBubbleSortAndSearch_targetNotFound" classname="SolutionTest" time="0.0"/>
+  <testcase name="testBubbleSortAndSearch_targetAtEnd" classname="SolutionTest" time="0.0"/>
+  <testcase name="testBubbleSortAndSearch_targetFound" classname="SolutionTest" time="0.007"/>
+  <testcase name="testBubbleSortAndSearch_duplicateTarget" classname="SolutionTest" time="0.0"/>
 </testsuite>

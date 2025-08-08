@@ -8,5 +8,3 @@ java.io.EOFException
 	at org.apache.maven.surefire.booter.spi.CommandChannelDecoder.decode(CommandChannelDecoder.java:60)
 	at org.apache.maven.surefire.booter.CommandReader$CommandRunnable.run(CommandReader.java:290)
 	at java.base/java.lang.Thread.run(Thread.java:1583)
-
-

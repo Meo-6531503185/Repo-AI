@@ -28,13 +28,9 @@ from langchain_google_vertexai import VertexAIEmbeddings
 import google.generativeai as palm
 from langchain.embeddings import GooglePalmEmbeddings
 import google.auth
-
-
 credentials, project_id = google.auth.default()
 load_dotenv()
-
 st.set_page_config(page_title="Pdf Reader", page_icon=":books:")
-
 def extractText_Pdf(pdf_files):
     text=""
     for pdf in pdf_files:
@@ -42,7 +38,6 @@ def extractText_Pdf(pdf_files):
         for page in pdf_reader.pages:
             text += page.extract_text()
     return text
-
 def get_textChuncks(extracted_text):
     text_splitter = CharacterTextSplitter(
         separator= "\n",
@@ -52,7 +47,6 @@ def get_textChuncks(extracted_text):
     )
     chunks = text_splitter.split_text(extracted_text)
     return chunks
-
 def get_vectorStores(text_chunks):
     #embeddings = OpenAIEmbeddings()
     #embeddings = HuggingFaceEmbeddings(model_name="hkunlp/instructor-xl")
@@ -63,7 +57,6 @@ def get_vectorStores(text_chunks):
     embeddings = VertexAIEmbeddings(model_name="text-embedding-004")
     vectorStore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vectorStore
-
 def get_conversation_chain(vector_store):
     #llm = ChatOpenAI()
     #llm = HuggingFaceHub(repo_id="google/flan-t5-small", model_kwargs={"temperature":0.5, "max_length":512})
@@ -78,7 +71,6 @@ def get_conversation_chain(vector_store):
             "top_k": 50
         }
     )
-
     #llm = HuggingFaceHub(
     #   repo_id="google/flan-t5-base", 
     #  model_kwargs={ 
@@ -95,14 +87,10 @@ def get_conversation_chain(vector_store):
         memory=memory
     )
     return conversation_chain
-
-
 def handle_userinput(user_question):
-
     response = st.session_state.conversation({'question': user_question})
     #st.write(response)
     st.session_state.chat_history = response['chat_history']
-
     for i, message in enumerate(st.session_state.chat_history):
         if i % 2 == 0:
             st.write(user_template.replace(
@@ -110,42 +98,29 @@ def handle_userinput(user_question):
         else:
             st.write(bot_template.replace(
                 "{{MSG}}", message.content), unsafe_allow_html=True)
-
-
 def main():
-
     st.write(css, unsafe_allow_html=True)
-
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
-    
     st.header("Uploads Your PDF & Just Ask :books:")  
     user_question = st.text_input("Ask a question about your Pdf:")
     if user_question:
         handle_userinput(user_question)
-
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = None
-    
-
     with st.sidebar:
         st.subheader("1. Upload files")
         pdf_files = st.file_uploader("accept multiple PDFs", accept_multiple_files=True)
         if st.button("Upload"):
             with st.spinner("Reading"):
                 extracted_text = extractText_Pdf(pdf_files)
-                
                 text_chunks = get_textChuncks(extracted_text)
-                
                 vector_store = get_vectorStores(text_chunks)
-                
                 if vector_store is None:
                     st.error("Failed to create embeddings. Please check your input data.")
                 else:
                     st.session_state.conversation = get_conversation_chain(vector_store)
-
-
 if __name__ == "__main__":  
     main()

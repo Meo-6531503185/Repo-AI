@@ -10,14 +10,12 @@ Unresolved compilation problems:
 	The method printMessage(null) is undefined for the type HelloWorld
 	The method printMessage(String) is undefined for the type HelloWorld
 	The method printMessage(String) is undefined for the type HelloWorld
-
 	at HelloWorldTest.<init>(HelloWorldTest.java:7)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
 HelloWorldTest.testPrintMessageEmpty -- Time elapsed: 0.002 s <<< ERROR!
 java.lang.Error: 
 Unresolved compilation problems: 
@@ -26,14 +24,12 @@ Unresolved compilation problems:
 	The method printMessage(null) is undefined for the type HelloWorld
 	The method printMessage(String) is undefined for the type HelloWorld
 	The method printMessage(String) is undefined for the type HelloWorld
-
 	at HelloWorldTest.<init>(HelloWorldTest.java:7)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
 HelloWorldTest.testPrintMessageWithSpaces -- Time elapsed: 0.002 s <<< ERROR!
 java.lang.Error: 
 Unresolved compilation problems: 
@@ -42,14 +38,12 @@ Unresolved compilation problems:
 	The method printMessage(null) is undefined for the type HelloWorld
 	The method printMessage(String) is undefined for the type HelloWorld
 	The method printMessage(String) is undefined for the type HelloWorld
-
 	at HelloWorldTest.<init>(HelloWorldTest.java:7)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
 HelloWorldTest.testPrintMessageNull -- Time elapsed: 0 s <<< ERROR!
 java.lang.Error: 
 Unresolved compilation problems: 
@@ -58,14 +52,12 @@ Unresolved compilation problems:
 	The method printMessage(null) is undefined for the type HelloWorld
 	The method printMessage(String) is undefined for the type HelloWorld
 	The method printMessage(String) is undefined for the type HelloWorld
-
 	at HelloWorldTest.<init>(HelloWorldTest.java:7)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
 HelloWorldTest.testPrintMessageHelloWorld -- Time elapsed: 0 s <<< ERROR!
 java.lang.Error: 
 Unresolved compilation problems: 
@@ -74,11 +66,9 @@ Unresolved compilation problems:
 	The method printMessage(null) is undefined for the type HelloWorld
 	The method printMessage(String) is undefined for the type HelloWorld
 	The method printMessage(String) is undefined for the type HelloWorld
-
 	at HelloWorldTest.<init>(HelloWorldTest.java:7)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
 	at java.base/java.util.Optional.orElseGet(Optional.java:364)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-

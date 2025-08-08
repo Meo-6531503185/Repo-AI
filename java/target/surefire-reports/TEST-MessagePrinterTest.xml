@@ -82,7 +82,6 @@ Unresolved compilation problems:
 	The method mock(Class<PrintStream>) is undefined for the type MessagePrinterTest
 	The method when(void) is undefined for the type MessagePrinterTest
 	The method verify(PrintStream) is undefined for the type MessagePrinterTest
-
 	at MessagePrinterTest.testPrintMessageWithMockito(MessagePrinterTest.java:41)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)

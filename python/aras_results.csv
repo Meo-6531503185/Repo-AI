@@ -1,0 +1,4 @@
+Test Score,Code Quality Score,Retry Score,Refactor Type Score,ARAS,Tests Passed,Total Tests,Violations,Retries
+0,100,80,90,46.0,0,0,0,1
+100.0,100,80,90,86.0,5,5,0,1
+100.0,100,80,90,86.0,5,5,0,1

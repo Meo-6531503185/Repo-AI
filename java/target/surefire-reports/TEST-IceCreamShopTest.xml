@@ -63,7 +63,6 @@
 Unresolved compilation problems: 
 	Syntax error on tokens, delete these tokens
 	Syntax error, insert "}" to complete ClassBody
-
 	at IceCreamShopTest.<init>(IceCreamShopTest.java:1)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -77,7 +76,6 @@ Unresolved compilation problems:
 Unresolved compilation problems: 
 	Syntax error on tokens, delete these tokens
 	Syntax error, insert "}" to complete ClassBody
-
 	at IceCreamShopTest.<init>(IceCreamShopTest.java:1)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -91,7 +89,6 @@ Unresolved compilation problems:
 Unresolved compilation problems: 
 	Syntax error on tokens, delete these tokens
 	Syntax error, insert "}" to complete ClassBody
-
 	at IceCreamShopTest.<init>(IceCreamShopTest.java:1)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -105,7 +102,6 @@ Unresolved compilation problems:
 Unresolved compilation problems: 
 	Syntax error on tokens, delete these tokens
 	Syntax error, insert "}" to complete ClassBody
-
 	at IceCreamShopTest.<init>(IceCreamShopTest.java:1)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -119,7 +115,6 @@ Unresolved compilation problems:
 Unresolved compilation problems: 
 	Syntax error on tokens, delete these tokens
 	Syntax error, insert "}" to complete ClassBody
-
 	at IceCreamShopTest.<init>(IceCreamShopTest.java:1)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)
@@ -133,7 +128,6 @@ Unresolved compilation problems:
 Unresolved compilation problems: 
 	Syntax error on tokens, delete these tokens
 	Syntax error, insert "}" to complete ClassBody
-
 	at IceCreamShopTest.<init>(IceCreamShopTest.java:1)
 	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
 	at java.base/java.lang.reflect.Constructor.newInstance(Constructor.java:486)

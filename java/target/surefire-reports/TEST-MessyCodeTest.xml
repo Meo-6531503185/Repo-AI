@@ -63,7 +63,6 @@
 Unresolved compilation problems: 
 	The method checkEvenOdd(int) is undefined for the type MessyCode
 	The method checkEvenOdd(int) is undefined for the type MessyCode
-
 	at MessyCodeTest.testEvenOdd(MessyCodeTest.java:7)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
@@ -74,7 +73,6 @@ Unresolved compilation problems:
     <error message="Unresolved compilation problem: &#10;	The method loopSum(int) is undefined for the type MessyCode&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
 Unresolved compilation problem: 
 	The method loopSum(int) is undefined for the type MessyCode
-
 	at MessyCodeTest.testLoopSum(MessyCodeTest.java:13)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
@@ -86,7 +84,6 @@ Unresolved compilation problem:
 Unresolved compilation problems: 
 	The method generateRandomNumber() is undefined for the type MessyCode
 	The method generateRandomNumber() is undefined for the type MessyCode
-
 	at MessyCodeTest.testRandomNumberGeneration(MessyCodeTest.java:18)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
@@ -97,7 +94,6 @@ Unresolved compilation problems:
     <error message="Unresolved compilation problem: &#10;	The method iterateStringArray() is undefined for the type MessyCode&#10;" type="java.lang.Error"><![CDATA[java.lang.Error: 
 Unresolved compilation problem: 
 	The method iterateStringArray() is undefined for the type MessyCode
-
 	at MessyCodeTest.testStringArrayIteration(MessyCodeTest.java:23)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)

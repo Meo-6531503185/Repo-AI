@@ -54,13 +54,11 @@ Thread dump before exiting the process (8880@PyaePyae-Laptop):
         at app//org.apache.maven.surefire.booter.ForkedBooter.execute(ForkedBooter.java:162)
         at app//org.apache.maven.surefire.booter.ForkedBooter.run(ForkedBooter.java:507)
         at app//org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:495)
-
 "Reference Handler" 
    java.lang.Thread.State: RUNNABLE
         at java.base@21.0.1/java.lang.ref.Reference.waitForReferencePendingList(Native Method)
         at java.base@21.0.1/java.lang.ref.Reference.processPendingReferences(Reference.java:246)
         at java.base@21.0.1/java.lang.ref.Reference$ReferenceHandler.run(Reference.java:208)
-
 "Finalizer" 
    java.lang.Thread.State: WAITING
         at java.base@21.0.1/java.lang.Object.wait0(Native Method)
@@ -70,16 +68,12 @@ Thread dump before exiting the process (8880@PyaePyae-Laptop):
         at java.base@21.0.1/java.lang.ref.ReferenceQueue.remove0(ReferenceQueue.java:158)
         at java.base@21.0.1/java.lang.ref.NativeReferenceQueue.remove(NativeReferenceQueue.java:89)
         at java.base@21.0.1/java.lang.ref.Finalizer$FinalizerThread.run(Finalizer.java:173)
-
 "Signal Dispatcher" 
    java.lang.Thread.State: RUNNABLE
-
 "Attach Listener" 
    java.lang.Thread.State: RUNNABLE
-
 "Notification Thread" 
    java.lang.Thread.State: RUNNABLE
-
 "Common-Cleaner" 
    java.lang.Thread.State: TIMED_WAITING
         at java.base@21.0.1/jdk.internal.misc.Unsafe.park(Native Method)
@@ -92,7 +86,6 @@ Thread dump before exiting the process (8880@PyaePyae-Laptop):
         at java.base@21.0.1/java.lang.Thread.runWith(Thread.java:1596)
         at java.base@21.0.1/java.lang.Thread.run(Thread.java:1583)
         at java.base@21.0.1/jdk.internal.misc.InnocuousThread.run(InnocuousThread.java:186)
-
 "surefire-forkedjvm-stream-flusher" 
    java.lang.Thread.State: TIMED_WAITING
         at java.base@21.0.1/jdk.internal.misc.Unsafe.park(Native Method)
@@ -105,7 +98,6 @@ Thread dump before exiting the process (8880@PyaePyae-Laptop):
         at java.base@21.0.1/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
         at java.base@21.0.1/java.lang.Thread.runWith(Thread.java:1596)
         at java.base@21.0.1/java.lang.Thread.run(Thread.java:1583)
-
 "surefire-forkedjvm-command-thread" 
    java.lang.Thread.State: RUNNABLE
         at java.management@21.0.1/sun.management.ThreadImpl.getThreadInfo1(Native Method)
@@ -118,6 +110,3 @@ Thread dump before exiting the process (8880@PyaePyae-Laptop):
         at app//org.apache.maven.surefire.booter.CommandReader$CommandRunnable.run(CommandReader.java:330)
         at java.base@21.0.1/java.lang.Thread.runWith(Thread.java:1596)
         at java.base@21.0.1/java.lang.Thread.run(Thread.java:1583)
-
-
-
