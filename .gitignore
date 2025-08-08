@@ -11,3 +11,4 @@ __pycache__/
 # Ignore OS-specific files
 .DS_Store
 Thumbs.db
+java/
