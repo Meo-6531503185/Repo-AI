@@ -1,19 +1,14 @@
 # Ignore virtual environment
 env/
-
 # Ignore environment variables
 .env
-
 # Ignore Python cache files
 __pycache__/
 *.pyc
-
 # Ignore IDE/editor-specific files
 .vscode/
 .idea/
-
 # Ignore OS-specific files
 .DS_Store
 Thumbs.db
-
 reportifyppp.2025-02-09.private-key.pem

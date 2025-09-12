@@ -5,17 +5,14 @@ css = '''
     flex-direction: column;
     margin-bottom: 1.5rem;
 }
-
 /* Message container for user */
 .chat-container.user {
     align-items: flex-end;
 }
-
 /* Message container for bot */
 .chat-container.bot {
     align-items: flex-start;
 }
-
 /* Shared styles for chat message bubbles */
 .chat-message {
     max-width: 70%;
@@ -26,19 +23,16 @@ css = '''
     font-size: 1rem;
     line-height: 1.5;
 }
-
 /* User-specific styles */
 .chat-container.user .chat-message {
     background-color: #475063;
     border-bottom-right-radius: 0;
 }
-
 /* Bot-specific styles */
 .chat-container.bot .chat-message {
     background-color: #2b313e;
     border-bottom-left-radius: 0;
 }
-
 /* Avatar container */
 .avatar {
     width: 50px;
@@ -47,14 +41,12 @@ css = '''
     overflow: hidden;
     margin: 0.5rem;
 }
-
 /* Avatar image styles */
 .avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
 }'''
-
 bot_template = '''
 <div class="chat-container bot">
     <div class="avatar">
@@ -63,7 +55,6 @@ bot_template = '''
     <div class="chat-message">{{MSG}}</div>
 </div>
 '''
-
 user_template = '''
 <div class="chat-container user">
     <div class="chat-message">{{MSG}}</div>

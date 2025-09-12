@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
+import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
-import github
 import requests
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, model_validator
@@ -172,7 +172,6 @@ class GitHubAPIWrapper(BaseModel):
                 }
             )
         return parsed
-    
     def create_branch(self, proposed_branch_name: str) -> str:
         """
         Create a new branch, and set it as the active bot branch.
@@ -214,45 +213,6 @@ class GitHubAPIWrapper(BaseModel):
             "At least 1000 branches exist with named derived from "
             f"proposed_branch_name: `{proposed_branch_name}`"
         )
-    
-    def set_active_branch(self, branch_name: str) -> str:
-        """Equivalent to `git checkout branch_name` for this Agent.
-        Clones formatting from Github.
-        Returns an Error (as a string) if branch doesn't exist.
-        """
-        curr_branches = [
-            branch.name for branch in self.github_repo_instance.get_branches()
-        ]
-        if branch_name in curr_branches:
-            self.active_branch = branch_name
-            return f"Switched to branch `{branch_name}`"
-        else:
-            return (
-                f"Error {branch_name} does not exist,"
-                f"in repo with current branches: {str(curr_branches)}"
-            )
-    def delete_branch(self, active_branch: str) -> str:
-        """
-        Deletes a branch from the repo
-        Parameters:
-            active_branch(str): Where the branch is
-        Returns:
-            str: Success or failure message
-        """
-        if self.active_branch == self.github_base_branch:
-            return (
-                "You're attempting to delete the directly"
-                f"to the {self.github_base_branch} branch, which is protected. "
-                "Please create a new branch and try again."
-            )
-        try:
-            branch_name = active_branch  # Replace with the branch you want to delete
-            ref = f"heads/{branch_name}"
-            self.github_repo_instance.get_git_ref(ref).delete()
-            return f"Branch '{branch_name}' deleted successfully."
-        except Exception as e:
-            return "Unable to delete branch due to error:\n" + str(e)
-        
     def create_file(self, file_query: str) -> str:
         if self.active_branch == self.github_base_branch:
             return (
@@ -268,8 +228,7 @@ class GitHubAPIWrapper(BaseModel):
                     file_path, ref=self.active_branch
                 )
                 if file:
-                    self.update_file(file_query)
-                    print (
+                    return (
                         f"File already exists at `{file_path}` "
                         f"on branch `{self.active_branch}`. You must use "
                         "`update_file` to modify it."
@@ -286,7 +245,87 @@ class GitHubAPIWrapper(BaseModel):
             return "Created file " + file_path
         except Exception as e:
             return "Unable to make file due to error:\n" + str(e)
-        
+    # def create_file(self,path: str, user_query: str, content: str, branch: str, message: str) -> str:
+    #     """
+    #     Parses the user query to create a file on a dynamically created or selected branch.
+    #     """
+    # # Extract file name from query
+    #     file_match = re.search(r"create a new file named ['\"]?([\w\-\/]+(\.\w+)?)['\"]?", user_query, re.IGNORECASE)
+    #     if not file_match:
+    #         return "Invalid query. Please specify a valid file name."
+    #     file_name = file_match.group(1).strip()  # Extracted file name
+    # # Extract branch name from query
+    #     branch_match = re.search(r"in the branch ['\"]?([\w\-]+)['\"]?", user_query, re.IGNORECASE)
+    #     if not branch_match:
+    #         return "Invalid query. Please specify a valid branch name."
+    #     new_branch = branch_match.group(1).strip()  # Extracted branch name
+    # # Switch or create the branch dynamically
+    #     try:
+    #         existing_branches = [branch.name for branch in self.github_repo_instance.get_branches()]
+    #         if new_branch not in existing_branches:
+    #             self.github_repo_instance.create_git_ref(
+    #                 ref=f"refs/heads/{new_branch}", 
+    #                 sha=self.github_repo_instance.get_branch(self.github_base_branch).commit.sha
+    #         )
+    #         self.active_branch = new_branch  # Set active branch dynamically
+    #     except Exception as e:
+    #         return f"Failed to create or switch to branch `{new_branch}`: {str(e)}"
+    # # Get file content from user input
+    #     file_contents = "Placeholder content for " + file_name  # Modify this for user input
+    #     try:
+    #     # Check if file exists
+    #         try:
+    #             file = self.github_repo_instance.get_contents(file_name, ref=self.active_branch)
+    #             if file:
+    #                 return (
+    #                 f"File `{file_name}` already exists on branch `{self.active_branch}`. "
+    #                 "Use `update_file` to modify it."
+    #             )
+    #         except Exception:
+    #             pass  # Expected behavior if file does not exist
+    #     # Create the file in the new branch
+    #         self.github_repo_instance.create_file(
+    #             path=file_name,
+    #             message=f"Create {file_name}",
+    #             content=file_contents,
+    #             branch=self.active_branch,
+    #         )
+    #         return f"Created file `{file_name}` in branch `{self.active_branch}`"
+    #     except Exception as e:
+    #         return f"Unable to create file due to error:\n{str(e)}"
+    # def create_file(self, file_query: str) -> str:
+    #     wrapper.active_branch = "test_branch"
+    #     if self.active_branch == self.github_base_branch:
+    #         return (
+    #             "You're attempting to commit to the directly to the"
+    #             f"{self.github_base_branch} branch, which is protected. "
+    #             "Please create a new branch and try again."
+    #         )
+    #     file_path = file_query.split("\n")[0]
+    #     file_contents = file_query[len(file_path) + 2 :]
+    #     try:
+    #         try:
+    #             file = self.github_repo_instance.get_contents(
+    #                 file_path, ref=self.active_branch
+    #             )
+    #             if file:
+    #                 return (
+    #                     f"File already exists at `{file_path}` "
+    #                     f"on branch `{self.active_branch}`. You must use "
+    #                     "`update_file` to modify it."
+    #                 )
+    #         except Exception:
+    #             # expected behavior, file shouldn't exist yet
+    #             pass
+    #         self.github_repo_instance.create_file(
+    #             path=file_path,
+    #             message="Create " + file_path,
+    #             content=file_contents,
+    #             branch=self.active_branch,
+    #         )
+    #         return "Created file " + file_path
+    #     except Exception as e:
+    #         return "Unable to make file due to error:\n" + str(e)
     def read_file(self, file_path: str) -> str:
         """
         Read a file from this agent's branch, defined by self.active_branch,
@@ -307,6 +346,7 @@ class GitHubAPIWrapper(BaseModel):
                 f"`{self.active_branch}`. Error: {str(e)}"
             )
     def update_file(self, file_query: str) -> str:
+        wrapper.active_branch = "test_branch"
         """
         Updates a file with new content.
         Parameters:
@@ -361,6 +401,7 @@ class GitHubAPIWrapper(BaseModel):
         except Exception as e:
             return "Unable to update file due to error:\n" + str(e)
     def delete_file(self, file_path: str) -> str:
+        wrapper.active_branch = "test_branch"
         """
         Deletes a file from the repo
         Parameters:
@@ -386,32 +427,28 @@ class GitHubAPIWrapper(BaseModel):
             return "Deleted file " + file_path
         except Exception as e:
             return "Unable to delete file due to error:\n" + str(e)
-        
+import os
+GITHUB_APP_ID = os.getenv("GITHUB_APP_ID")
+GITHUB_PRIVATE_KEY_PATH = os.getenv("GITHUB_PRIVATE_KEY_PATH")
+# Read the private key from file
+with open(GITHUB_PRIVATE_KEY_PATH, "r") as key_file:
+    GITHUB_PRIVATE_KEY = key_file.read()
 wrapper = GitHubAPIWrapper(
-    github_repository = "moepyaePK/dormbooking"
-,
-    github_app_id="1154382",
-   github_app_private_key = "//Users//soemoe//MFU//3rd Year//Seminar//Repo Ai//repoai-api.2025-02-22.private-key.pem"
+    github_repository = "freeCodeCamp/freeCodeCamp",
+    github_app_id = GITHUB_APP_ID,
+    github_app_private_key = GITHUB_PRIVATE_KEY_PATH
 )
-print(wrapper.github_base_branch)
-# print(wrapper.active_branch)
-# g = wrapper.github d nha khu ka ma lo tot buu but d tine for knowledge atwat htr htr dr
-# repo = g.get_repo("moepyaePK/dormbooking")
-# issues = wrapper.github_repo_instance.get_issues(state="open")  # This fetches open issues from the repository
+print(wrapper)
+g = wrapper.github
+repo = g.get_repo("freeCodeCamp/freeCodeCamp")
+# issues = repo.get_issues(state="open")  # This fetches open issues from the repository
 # print(wrapper.parse_issues(wrapper.github_repo_instance.get_issues(state="open")))
 # print(wrapper.parse_pull_requests(wrapper.github_repo_instance.get_pulls()))
 # print(wrapper.list_files_in_main_branch())
 # print(wrapper.create_branch("test_branch"))
-# print(wrapper.create_branch("mk_branch"))
-# print(wrapper.set_active_branch("mk_branch"))
-# print(wrapper.delete_branch("mk_branch"))
-# print(wrapper.delete_branch("test_branch"))
-# print(wrapper.create_file("test_branch\test.txt\nThis is a test file."))
 # print(wrapper.read_file("L7Info.java"))
-# print(wrapper.update_file("test_branch\test.txt\nOLD <<<<\nhis is a test file.\n>>>> OLD\nNEW <<<<\nThis is a new test file.\n>>>> NEW"))
-# print(wrapper.delete_file("test_branch\test.txt"))
-  # Remaining requests
-g = github.Github("1154382", "C:\\Users\\user\\Documents\\repoai-api.2025-02-22.private-key.pem")
-rate_limit = g.get_rate_limit()
-print(rate_limit.core.remaining)
-
+# Normal Process 
+# Github repo link
+# Optional (For Giving the access to AI to interact with the GitHub Repo for pull, push, ...)
+# APP ID 
+# Repo Name

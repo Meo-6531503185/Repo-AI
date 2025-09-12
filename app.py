@@ -22,14 +22,12 @@ from langchain.embeddings import GooglePalmEmbeddings
 import google.auth
 from githubTest import *
 from data_fetch.fetching import fetch_file_content, fetch_all_files_from_repo, fetch_repo_contents
-
 load_dotenv()
 github_token = os.getenv("GITHUB_TOKEN")
 if github_token:
     print("GitHub Token loaded successfully")
 else:
     print("GitHub Token not found")
-
 #Untouch
 def read_all_repo_files(github_url, github_token):
     """Read all files in a repository and store them for later queries."""
@@ -37,24 +35,19 @@ def read_all_repo_files(github_url, github_token):
     owner, repo = parts[-2], parts[-1]
     api_url = f"https://api.github.com/repos/{owner}/{repo}/contents"
     headers = {"Authorization": f"token {github_token}"}
-
     all_files = fetch_all_files_from_repo(api_url, headers)
-
     repo_data = {}
     all_file_chunks = []
     for file in all_files:
         file_content = fetch_file_content(file["url"])
         #Touch ( changed from get_text_chunks to get_text_chunks_for_refactoring)
         # chunks = get_text_chunks_for_refactoring(file_content)
-
         chunks = get_text_chunks(file_content)
         all_file_chunks.extend(chunks)
         repo_data[file["path"]] = file_content
-    
     # Generate the vector store from the chunks
     vector_store = get_vector_store(all_file_chunks)
     return repo_data, vector_store
-
 #Original
 def get_text_chunks(extracted_text):
     text_splitter = CharacterTextSplitter(
@@ -65,27 +58,23 @@ def get_text_chunks(extracted_text):
     )
     chunks = text_splitter.split_text(extracted_text)
     return chunks
-
-
 #Untouch
 def get_vector_store(text_chunks):
-    # PROJECT_ID = "coderefactoringai"
-    PROJECT_ID = "repoai-440607"
+    PROJECT_ID = "coderefactoringai"
+    #PROJECT_ID = "repoai-440607"
     LOCATION = "us-central1"
     vertexai.init(project=PROJECT_ID, location=LOCATION)
     embeddings = VertexAIEmbeddings(model_name="text-embedding-004")
     vector_store = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vector_store
-
 def get_conversation_chain(vector_store):
-
     retriever = vector_store.as_retriever(
         search_type = "mmr",
         search_kwargs = {"k":8},
     )
     llm = VertexAI(
-        # project="coderefactoringai",
-        project = "repoai-440607",
+        project="coderefactoringai",
+        #project = "repoai-440607",
         location="us-central1",
         # model="gemini-1.5-flash-002",
         model = "gemini-1.5-pro",
@@ -103,28 +92,21 @@ def get_conversation_chain(vector_store):
         memory=memory,
     )
     return conversation_chain
-
 import re
-
 def split_explanation_and_code(response_content):
     """
     Splits the AI response into explanation and code.
     Works with responses that use triple backticks for code blocks.
     """
-
     # Match everything before and inside a code block
     match = re.search(r"```(?:python)?\n(.*?)```", response_content, re.DOTALL)
-
     if match:
         code_snippet = match.group(1).strip()  # Extracted code
         explanation = response_content.replace(match.group(0), "").strip()  # Remove the code block
     else:
         explanation = response_content  # If no code block, return entire response as explanation
         code_snippet = ""
-
     return explanation, code_snippet
-
-
 #New funs
 # Function to explain code in detail
 def explain_code_detailed(file_content, user_question):
@@ -138,7 +120,6 @@ def explain_code_detailed(file_content, user_question):
         explain_type = "block_by_block"
     else:
         explain_type = "general"
-
     # Generate the appropriate prompt
     if explain_type == "line_by_line":
         explanation_query = f"""
@@ -146,11 +127,9 @@ Provide a detailed, line-by-line explanation of the following code. For each lin
 - What the line does.
 - Why it is needed in the code.
 - Any potential side effects or important considerations related to that line.
-
 Please format your response as follows:
 1. Line of code: Explanation
 2. Line of code: Explanation
-
 Here is the code:
 {file_content}
 """
@@ -162,13 +141,11 @@ For each block:
 - Explain what the block does.
 - Describe why it is necessary.
 - Highlight any important considerations or potential optimizations.
-
 Format your response as:
 ### Code Block:
 ```python
 <code_snippet>
 """
-        
     else:
         explanation_query = f"""
 Provide a high-level summary of the following code. Focus on:
@@ -176,27 +153,20 @@ Provide a high-level summary of the following code. Focus on:
 - How the code is structured.
 - The key functionalities it provides.
 - Any important design choices.
-
 Here is the code:
 {file_content}
 """
-
     response = st.session_state.conversation({"question": explanation_query})
     return response["answer"]
     # st.write(response["answer"])
-
-
 def refactor_code(file_content):
     """
     Use AI to refactor the given code.
     """
     # st.subheader("Refactored Code:")
-
     # # First, display the original code
     # st.write("### Original Code:")
     # st.code(file_content, language='python')  # Display the original code snippet
-
-
     # Create the refactor query
     refactor_query = f"""
     Instruction:
@@ -211,24 +181,17 @@ def refactor_code(file_content):
         Important feature: (To let the users know what changes made to their source code)
         After refactoring, include a summary explaining what changes were made and how they help achieve the improvements and the modified code.
     """
-    
     # Request the refactor from the AI model
     response = st.session_state.conversation({"question": refactor_query})
     # refactored_code
-
     # Split the response into explanation and refactored code
     explanation, code_snippet = split_explanation_and_code(response["answer"])
-
     return f"### Explanation of Refactored Code:\n{explanation}\n\n### Refactored Code:\n```python\n{code_snippet}\n```"
-
     # Display explanation and refactored code
     # st.write("### Explanation of Refactored Code:")
     # st.write(explanation)  # Display the explanation of why the code was refactored this way
-
     # st.write("### Refactored Code:")
     # st.code(code_snippet, language='python')  # Display the refactored code
-
-
 # Function to suggest features
 def suggest_features(file_content):
     """
@@ -241,42 +204,32 @@ Provide:
 - A list of suggested features.
 - An explanation of why each feature is beneficial.
 - The modified code incorporating those features.
-
 Here is the code:
 {file_content}
 """
-
     response = st.session_state.conversation({"question": suggestion_query})
     explanation, code_snippet = split_explanation_and_code(response["answer"])
-
     return f"### Explanation\n{explanation}\n\n### Modified Code\n```python\n{code_snippet}\n```" if code_snippet else f"### Explanation\n{explanation}"
-
-
     # Display explanation and suggested code
     # st.write("### Explanation")
     # st.write(explanation)
     # if code_snippet:
     #     st.write("### Modified Code")
     #     st.code(code_snippet, language='python')
-
 #New fun for code
 def handle_user_input(user_question):
     if "conversation" in st.session_state:
         conversation_chain = st.session_state.conversation
-
         # Check if the question is about a specific file
         import re
         match = re.search(r'["\']?([\w\-/]+(\.\w+))["\']?', user_question)
         file_name = match.group(1) if match else None
-
         special_query = any(keyword in user_question.lower() for keyword in ["explain", "refactor", "suggest"])
-
         if file_name:
             # Ensure repo_data is loaded
             if not st.session_state.repo_data:
                 st.error("Repository data is empty. Please ensure the repository was loaded correctly.")
                 return
-
             # Search for the file in the repository data
             matching_files = [
                 key for key in st.session_state.repo_data.keys() if file_name in key
@@ -284,11 +237,9 @@ def handle_user_input(user_question):
             if matching_files:
                 # Get the first matching file content
                 file_content = st.session_state.repo_data[matching_files[0]]
-
                 # 1. Display the source code first
                 st.subheader(f"Source Code in '{file_name}':")
                 st.code(file_content, language='python')  # Adjust language based on file type
-
                 #New 
                  # Handle user request types
                 if "explain" in user_question.lower():
@@ -300,18 +251,15 @@ def handle_user_input(user_question):
                 else:
                     st.error("Unsupported operation. Please use 'explain', 'refactor', or 'suggest' in your question.")
                     return
-                
                 if special_query and bot_reply:
                     st.session_state.messages.append({"role": "user", "content": user_question})
                     st.session_state.messages.append({"role": "assistant", "content": bot_reply})
-
             else:
                 st.error(f"File '{file_name}' not found in the repository.")
         else:
              # Handle non-file-specific questions as usual
             response = conversation_chain({"question": user_question})
             bot_reply = response.get("chat_history", ["No response."])[-1].content
-
             # Append to chat history
             # if not st.session_state.messages or st.session_state.messages[-1]["content"] != bot_reply:
             if bot_reply:
@@ -319,7 +267,6 @@ def handle_user_input(user_question):
                 st.session_state.messages.append({"role": "assistant", "content": bot_reply})
             return bot_reply
             # st.session_state.chat_history = response['chat_history']
-
             # for i, message in enumerate(st.session_state.chat_history):
             #     if i % 2 == 0:
             #         st.write(f"User: {message.content}")
@@ -327,8 +274,6 @@ def handle_user_input(user_question):
             #         st.write(f"Bot: {message.content}")
     else:
         st.error("Conversation chain is not initialized. Please provide a repository URL first.")
-
-
 # Function to display the chat history with a background color
 def display_chat_history():
     for message in st.session_state.messages:
@@ -341,9 +286,6 @@ def display_chat_history():
                 st.chat_message("assistant").markdown("*No response available*")  
         # with st.chat_message(message["role"]):
         #     st.markdown(message["content"])
-
-
-
     # st.markdown(
     #     """
     #     <style>
@@ -368,7 +310,6 @@ def display_chat_history():
     #     """,
     #     unsafe_allow_html=True,
     # )
-
     # st.markdown('<div class="chat-container">', unsafe_allow_html=True)
     # for i, message in enumerate(st.session_state.chat_history):
     #     if i % 2 == 0:
@@ -376,116 +317,69 @@ def display_chat_history():
     #     else:
     #         st.markdown(f'<div class="bot-message"> Bot: {message.content}</div>', unsafe_allow_html=True)
     # st.markdown('</div>', unsafe_allow_html=True)
-
 #Modified 0.2
 # Main Streamlit application function
+def load_private_key():
+    private_key_path = "//Users//soemoe//MFU//3rd Year//Seminar//Repo Ai//repoai-api.2025-02-22.private-key.pem"
+    try:
+        with open(private_key_path, "r") as key_file:
+            return key_file.read()
+    except FileNotFoundError:
+        print(f"Error: Private key file not found at {private_key_path}")
+        return None
+    except Exception as e:
+        print(f"Error loading private key: {str(e)}")
+        return None
 def main():
     st.set_page_config(page_title="GitHub Repositories Reader")
-
-
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
-    # if "chat_history" not in st.session_state:
-    #     st.session_state.chat_history = []
     if "messages" not in st.session_state:
         st.session_state.messages = []
-        #Newly added one for code
-    if "repo_data" not in st.session_state:  # Add repo_data initialization
+    if "repo_data" not in st.session_state:
         st.session_state.repo_data = {}
-
-    if "GITHUB_APP_ID" not in st.session_state:
-        st.session_state.GITHUB_APP_ID = ""
-    if "GITHUB_PRIVATE_KEY_PATH" not in st.session_state:
-        st.session_state.GITHUB_PRIVATE_KEY_PATH = ""
-    if "GITHUB_REPOSITORY" not in st.session_state:
-        st.session_state.GITHUB_REPOSITORY = ""
-
+    GITHUB_APP_ID = "1154382"  # Replace with actual App ID
+    INSTALL_URL = "https://github.com/apps/repoai-api"
     st.header(":red[REPO AI]")
     st.subheader(":blue[Superduper performance] :rocket:")
-
-    # Display chat history if available
-    # if st.session_state.chat_history:
-    # display_chat_history()
-
-    #For Side bar ( Github Extra features)
     with st.sidebar:
-        st.header("GitHub Credentials (Optional)")
-        st.session_state.GITHUB_APP_ID = st.text_input("GitHub App ID", value=st.session_state.GITHUB_APP_ID)
-        st.session_state.GITHUB_PRIVATE_KEY_PATH = st.text_input("Private Key Path", value=st.session_state.GITHUB_PRIVATE_KEY_PATH)
-        st.session_state.GITHUB_REPOSITORY = st.text_input("GitHub Repository (e.g., owner/repo)", value=st.session_state.GITHUB_REPOSITORY)
-
-
+        st.header("GitHub Integration")
+        st.markdown(f"[Click here to install RepoAI]({INSTALL_URL}) :link:")
+        st.session_state.GITHUB_REPOSITORY = st.text_input("Enter your GitHub Repository (e.g., owner/repo)")
     github_url = st.text_input("Enter GitHub repository URL:")
     user_question = st.chat_input("Ask a question about your GitHub repository:")
-
-    #New one
     if github_url:
-    # Fetch data only if it's not already fetched for the current session
         if not st.session_state.get("repo_data_fetched", False):
             with st.spinner("Fetching repository contents..."):
-            # Fetch repository contents and create a vector store
                 repo_data, vector_store = read_all_repo_files(github_url, github_token)
-
             if repo_data:
-                # Save the fetched repository data and vector store in session state
                 st.session_state.repo_data = repo_data
                 st.session_state.vector_store = vector_store
-                st.session_state.repo_data_fetched = True  # Mark as fetched
-
-                # Initialize the conversation chain
+                st.session_state.repo_data_fetched = True
                 st.session_state.conversation = get_conversation_chain(vector_store)
-
             else:
                 st.error("Failed to fetch content from GitHub.")
-
-    #GitHub Credentials Handling
-    elif st.session_state.GITHUB_APP_ID and st.session_state.GITHUB_PRIVATE_KEY_PATH and st.session_state.GITHUB_REPOSITORY:
-        try:
-            with open(st.session_state.GITHUB_PRIVATE_KEY_PATH, "r") as key_file:
-                GITHUB_PRIVATE_KEY = key_file.read()
-        except FileNotFoundError:
-            st.error("Error: Private key file not found. Please provide a valid path.")
-            return
-        
-
+    elif st.session_state.GITHUB_REPOSITORY:
         wrapper = GitHubAPIWrapper(
             github_repository=st.session_state.GITHUB_REPOSITORY,
-            github_app_id=st.session_state.GITHUB_APP_ID,
-            github_app_private_key=GITHUB_PRIVATE_KEY
+            github_app_id=GITHUB_APP_ID,
+            github_app_private_key=load_private_key()
         )
-
         st.success("Connected to GitHub successfully!")
         repo = wrapper.github.get_repo(st.session_state.GITHUB_REPOSITORY)
-
-        # Fetch and display issues & pull requests
         st.subheader("Open Issues")
         st.write(wrapper.parse_issues(repo.get_issues(state="open")))
-
         st.subheader("Pull Requests")
         st.write(wrapper.parse_pull_requests(repo.get_pulls()))
-
         st.subheader("Repository Files")
         st.write(wrapper.list_files_in_main_branch())
-
-        # Create a branch button
         if st.button("Create Test Branch"):
             result = wrapper.create_branch("test_branch")
             st.write(result)
-
     else:
-        st.info("Please put a GitHub Repository Link for Data fetching")
-
-    # Process the user's question
+        st.info("Please install the RepoAI GitHub App and enter your repository link.")
     if user_question:
-        # if st.session_state.get("conversation"):
-            handle_user_input(user_question)
-            display_chat_history()
-        # else:
-        #     st.error("Conversation chain not initialized. Please check the repository link.")
-    # if user_question and st.session_state.get("conversation"):
-    #     handle_user_input(user_question)
-    # elif user_question:
-    #     st.error("Conversation chain not initialized. Please check the repository link.")
-
+        handle_user_input(user_question)
+        display_chat_history()
 if __name__ == "__main__":
     main()
