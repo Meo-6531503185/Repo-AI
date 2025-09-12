@@ -22,6 +22,7 @@ from langchain.embeddings import GooglePalmEmbeddings
 import google.auth
 from githubTest import *
 from data_fetch.fetching import fetch_file_content, fetch_all_files_from_repo, fetch_repo_contents
+
 load_dotenv()
 github_token = os.getenv("GITHUB_TOKEN")
 if github_token:
@@ -42,6 +43,7 @@ def read_all_repo_files(github_url, github_token):
         file_content = fetch_file_content(file["url"])
         #Touch ( changed from get_text_chunks to get_text_chunks_for_refactoring)
         # chunks = get_text_chunks_for_refactoring(file_content)
+
         chunks = get_text_chunks(file_content)
         all_file_chunks.extend(chunks)
         repo_data[file["path"]] = file_content
@@ -67,14 +69,15 @@ def get_vector_store(text_chunks):
     embeddings = VertexAIEmbeddings(model_name="text-embedding-004")
     vector_store = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vector_store
+
 def get_conversation_chain(vector_store):
     retriever = vector_store.as_retriever(
         search_type = "mmr",
         search_kwargs = {"k":8},
     )
     llm = VertexAI(
-        project="coderefactoringai",
-        #project = "repoai-440607",
+        # project="coderefactoringai",
+        project = "repoai-440607",
         location="us-central1",
         # model="gemini-1.5-flash-002",
         model = "gemini-1.5-pro",
@@ -187,11 +190,15 @@ def refactor_code(file_content):
     # Split the response into explanation and refactored code
     explanation, code_snippet = split_explanation_and_code(response["answer"])
     return f"### Explanation of Refactored Code:\n{explanation}\n\n### Refactored Code:\n```python\n{code_snippet}\n```"
+
     # Display explanation and refactored code
     # st.write("### Explanation of Refactored Code:")
     # st.write(explanation)  # Display the explanation of why the code was refactored this way
+
     # st.write("### Refactored Code:")
     # st.code(code_snippet, language='python')  # Display the refactored code
+
+
 # Function to suggest features
 def suggest_features(file_content):
     """
@@ -210,12 +217,15 @@ Here is the code:
     response = st.session_state.conversation({"question": suggestion_query})
     explanation, code_snippet = split_explanation_and_code(response["answer"])
     return f"### Explanation\n{explanation}\n\n### Modified Code\n```python\n{code_snippet}\n```" if code_snippet else f"### Explanation\n{explanation}"
+
+
     # Display explanation and suggested code
     # st.write("### Explanation")
     # st.write(explanation)
     # if code_snippet:
     #     st.write("### Modified Code")
     #     st.code(code_snippet, language='python')
+
 #New fun for code
 def handle_user_input(user_question):
     if "conversation" in st.session_state:
@@ -261,12 +271,12 @@ def handle_user_input(user_question):
             response = conversation_chain({"question": user_question})
             bot_reply = response.get("chat_history", ["No response."])[-1].content
             # Append to chat history
-            # if not st.session_state.messages or st.session_state.messages[-1]["content"] != bot_reply:
             if bot_reply:
                 st.session_state.messages.append({"role": "user", "content": user_question})
                 st.session_state.messages.append({"role": "assistant", "content": bot_reply})
             return bot_reply
             # st.session_state.chat_history = response['chat_history']
+
             # for i, message in enumerate(st.session_state.chat_history):
             #     if i % 2 == 0:
             #         st.write(f"User: {message.content}")
@@ -286,6 +296,9 @@ def display_chat_history():
                 st.chat_message("assistant").markdown("*No response available*")  
         # with st.chat_message(message["role"]):
         #     st.markdown(message["content"])
+
+
+
     # st.markdown(
     #     """
     #     <style>
@@ -310,6 +323,7 @@ def display_chat_history():
     #     """,
     #     unsafe_allow_html=True,
     # )
+
     # st.markdown('<div class="chat-container">', unsafe_allow_html=True)
     # for i, message in enumerate(st.session_state.chat_history):
     #     if i % 2 == 0:
@@ -317,6 +331,7 @@ def display_chat_history():
     #     else:
     #         st.markdown(f'<div class="bot-message"> Bot: {message.content}</div>', unsafe_allow_html=True)
     # st.markdown('</div>', unsafe_allow_html=True)
+
 #Modified 0.2
 # Main Streamlit application function
 def load_private_key():
@@ -342,6 +357,12 @@ def main():
     INSTALL_URL = "https://github.com/apps/repoai-api"
     st.header(":red[REPO AI]")
     st.subheader(":blue[Superduper performance] :rocket:")
+
+    # Display chat history if available
+    # if st.session_state.chat_history:
+    # display_chat_history()
+
+    #For Side bar ( Github Extra features)
     with st.sidebar:
         st.header("GitHub Integration")
         st.markdown(f"[Click here to install RepoAI]({INSTALL_URL}) :link:")
@@ -374,12 +395,20 @@ def main():
         st.subheader("Repository Files")
         st.write(wrapper.list_files_in_main_branch())
         if st.button("Create Test Branch"):
-            result = wrapper.create_branch("test_branch")
+            result = wrapper.create_branch("Hello_branch")
             st.write(result)
     else:
         st.info("Please install the RepoAI GitHub App and enter your repository link.")
     if user_question:
-        handle_user_input(user_question)
-        display_chat_history()
+        # if st.session_state.get("conversation"):
+            handle_user_input(user_question)
+            display_chat_history()
+        # else:
+        #     st.error("Conversation chain not initialized. Please check the repository link.")
+    # if user_question and st.session_state.get("conversation"):
+    #     handle_user_input(user_question)
+    # elif user_question:
+    #     st.error("Conversation chain not initialized. Please check the repository link.")
+
 if __name__ == "__main__":
     main()
