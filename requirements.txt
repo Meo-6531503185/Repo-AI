@@ -1,2 +1,13 @@
 streamlit
-subprocess
+python-dotenv
+langchain-text-splitters
+langchain-community
+langchain
+requests
+google-cloud-aiplatform
+langchain-google-vertexai
+google-generativeai
+langchain-core
+PyJWT
+PyGithub
+pydantic
