@@ -20,11 +20,12 @@ import jwt
 import time
 import re
 from langchain.docstore.document import Document
+import tiktoken
 
 
 load_dotenv()
 github_token = os.getenv("GITHUB_APP_ID")
-github_private_file = os.getenv("GITHUB_PRIVATE_KEY_PATH")
+github_private_file = os.getenv("GITHUB_PRIVATE_KEY")
 if github_token and github_private_file:
    print("GitHub Token loaded successfully")
 else:
@@ -199,7 +200,7 @@ def get_text_chunks(extracted_text,max_tokens = 20000, overlap = 200):
 
 def get_vector_store(text_chunks):
    chunks = get_text_chunks(text_chunks)
-   PROJECT_ID = "repoai-450409"
+   PROJECT_ID = "langchain-iris-chatbot"
    #PROJECT_ID = "coderefactoringai"
    LOCATION = "us-central1"
    vertexai.init(project=PROJECT_ID, location=LOCATION)
@@ -219,7 +220,6 @@ def get_vector_store(text_chunks):
    return vector_store
 
 
-# GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 def get_conversation_chain(vector_store):
    retriever = vector_store.as_retriever(
        search_type = "mmr",
@@ -228,10 +228,9 @@ def get_conversation_chain(vector_store):
 
 
    llm = VertexAI(
-       project = "repoai-450409",
+       project = "langchain-iris-chatbot",
        location="us-central1",
-       # model="gemini-1.5-flash-002",
-       model = "gemini-1.5-pro",
+       model = "gemini-2.5-pro",
        model_kwargs={
            "temperature": 0.7,
            "max_length": 600,
@@ -255,7 +254,7 @@ def extract_class_name(java_code):
 
 
 #model
-model = VertexAI(model="gemini-1.5-pro")
+model = VertexAI(model="gemini-2.5-pro")
 
 
 def generate_java_code_and_test(user_code):
@@ -297,8 +296,8 @@ Do NOT add the package name and class name at the top of the code.
   
 def run_maven_tests():
    """Run Maven tests and return the output."""
-   maven_path = "/opt/homebrew/opt/maven/bin/mvn"
-   project_path = "/Users/soemoe/MFU/3rd Year/Seminar/Repo Ai/java"
+   maven_path = "C:\\Program Files\\apache-maven-3.9.5\\bin\\mvn.cmd"
+   project_path = r"C:\\Users\\user\\Documents\\RepoAI\\Repo-AI\\java"
    try:
        result = subprocess.run([maven_path, "test"], cwd=project_path, capture_output=True, text=True, check=True)
        return result.stdout, 0
@@ -663,8 +662,8 @@ def main():
         unsafe_allow_html=True
     )
 
-   with col2:
-    st.image("repoAi Logo.png", width=100)  # Logo on the right
+#    with col2:
+#     st.image("repoAi Logo.png", width=100)  # Logo on the right
 
 
 

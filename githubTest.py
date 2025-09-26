@@ -2,6 +2,8 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 import github
+import os
+from dotenv import load_dotenv
 import requests
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import BaseModel, ConfigDict, model_validator
@@ -10,6 +12,15 @@ if TYPE_CHECKING:
     from github.PullRequest import PullRequest
 LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
 LANGSMITH_PROJECT="pr-puzzled-utilisation-86"
+
+load_dotenv()
+github_token = os.getenv("GITHUB_APP_ID")
+github_private_file = os.getenv("GITHUB_PRIVATE_KEY")
+if github_token and github_private_file:
+   print("GitHub Token loaded successfully")
+else:
+   print("GitHub Token not found")
+
 def _import_tiktoken() -> Any:
     """Import tiktoken."""
     try:
@@ -41,7 +52,7 @@ class GitHubAPIWrapper(BaseModel):
         )
         github_app_id = get_from_dict_or_env(values, "github_app_id", "GITHUB_APP_ID")
         github_app_private_key = get_from_dict_or_env(
-            values, "github_app_private_key", "GITHUB_APP_PRIVATE_KEY"
+            values, "github_app_private_key", "GITHUB_PRIVATE_KEY"
         )
         try:
             from github import Auth, GithubIntegration
@@ -390,8 +401,8 @@ class GitHubAPIWrapper(BaseModel):
 wrapper = GitHubAPIWrapper(
     github_repository = "moepyaePK/dormbooking"
 ,
-    github_app_id="1154382",
-   github_app_private_key = "//Users//soemoe//MFU//3rd Year//Seminar//Repo Ai//repoai-api.2025-02-22.private-key.pem"
+    github_app_id=github_token,
+   github_app_private_key = github_private_file
 )
 print(wrapper.github_base_branch)
 # print(wrapper.active_branch)
@@ -411,7 +422,5 @@ print(wrapper.github_base_branch)
 # print(wrapper.update_file("test_branch\test.txt\nOLD <<<<\nhis is a test file.\n>>>> OLD\nNEW <<<<\nThis is a new test file.\n>>>> NEW"))
 # print(wrapper.delete_file("test_branch\test.txt"))
   # Remaining requests
-g = github.Github("1154382", "C:\\Users\\user\\Documents\\repoai-api.2025-02-22.private-key.pem")
-rate_limit = g.get_rate_limit()
-print(rate_limit.core.remaining)
+
 
