@@ -11,3 +11,4 @@ langchain-core
 PyJWT
 PyGithub
 pydantic
+autogen_core

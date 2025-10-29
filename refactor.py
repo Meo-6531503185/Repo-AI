@@ -7,7 +7,7 @@ import streamlit as st
 #model
 model = VertexAI(model="gemini-2.5-pro")
 
-def refactor_code_with_ai(user_code, requirements, reasons):
+def refactor_code_with_ai(user_code, requirements):
    """Use Vertex AI to refine the user code based on test output."""
    system_template = f"""
    Refactor the following Java code to meet the requirements and address the issues and potential threats.
@@ -16,16 +16,14 @@ def refactor_code_with_ai(user_code, requirements, reasons):
    Provide only the raw Java code without any markdown or formatting symbols. Do not add the package name.
    ### Requirements ###
    {requirements}
-   ### Reasons ###
-   {reasons} are the test outputs why the previous AI-generated Java code did not pass the Maven tests.
-   Refactor the code accordingly to satisfy these issues.
+  
    """
    prompt_template = ChatPromptTemplate.from_messages([
        ("system", system_template),
        ("user", "{text}"),
-       ("user", "{text2}")
+      
    ])
-   prompt = prompt_template.invoke({"requirements": requirements, "text": user_code, "text2": reasons})
+   prompt = prompt_template.invoke({"requirements": requirements, "text": user_code})
    try:
        refined_code = model.invoke(prompt)
        print("AI successfully refined the code.")
@@ -173,3 +171,33 @@ Return a structured summary of enhancements and confirm that the project remains
       
    except Exception as e:
        print(f"An error occurred while processing test output: {e}")
+       
+       
+def Add_feature(user_question, code_context):
+    system_template= f"""You are an expert Java developer. Your sole task is to implement a brand new feature for the project based on the user's requirements and the provided existing code context.
+
+**Goal:** Implement the new feature requested.
+**Constraints:**
+1.  Ensure the new code integrates seamlessly with the existing file structure and dependencies.
+2.  Do NOT modify any code in the existing class unless absolutely necessary for the new feature's dependencies.
+3.  Do NOT include any explanations, external context, or markdown formatting (e.g., ```java).
+4.  Provide ONLY the raw, complete Java code for the new class or the modified section.
+
+**User Requirements:** {user_question}
+**Relevant Existing Code Context:** {code_context}"""
+
+    prompt_template = ChatPromptTemplate.from_messages([
+       ("system", system_template),
+       ("user", "{text}"),
+      
+   ])
+    prompt = prompt_template.invoke({"code_context": code_context, "text": user_question})
+    try:
+       refined_code = model.invoke(prompt)
+       print("AI successfully refined the code.")
+    #    return f"\n{refined_code}\n"
+       return refined_code
+    except Exception as e:
+       print(f"An error occurred while calling Vertex AI: {e}")
+       return code_context
+   
