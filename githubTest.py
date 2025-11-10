@@ -212,11 +212,10 @@ class GitHubAPIWrapper(BaseModel):
                     new_branch_name = f"{proposed_branch_name}_v{i}"
                 else:
                     # Handle any other exceptions
-                    print(f"Failed to create branch. Error: {e}")  # noqa: T201
-                    raise Exception(
-                        "Unable to create branch name from proposed_branch_name: "
-                        f"{proposed_branch_name}"
-                    )
+                    print("GitHub Create Branch Error:")
+                    print("Status:", e.status)
+                    print("Data:", e.data)
+                    raise
         return (
             "Unable to create branch. "
             "At least 1000 branches exist with named derived from "
