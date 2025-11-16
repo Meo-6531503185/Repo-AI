@@ -25,7 +25,6 @@ from githubTest import * # Assuming GitHubAPIWrapper is here
 from fetching import * # Assuming read_all_repo_files is here
 from processing import * # Assuming other utilities are here
 from agents.sub_agents import (
-    OverviewAgent,
     MultiFileRefactorAgent,
 )
 from agents.push_agent import PushAgent # Assuming PushAgent is in agents/sub_agents.py or a separate file
@@ -150,23 +149,25 @@ def check_intent_similarity(user_request: str, full_refactored_code: str, embedd
 class ReasoningRequest:
     question: str
 
-# Helper to parse the action tag from LLM output
+
 def _parse_tag(explanation_output: str) -> str:
-    """Robustly extracts the action tag from the end of the LLM response."""
+    """Robustly extracts the action tag from the LLM response."""
     lines = [line.strip() for line in explanation_output.strip().splitlines() if line.strip()]
     if lines:
         last_line = lines[-1]
         if last_line in ["REPO_OVERVIEW", "REFACTOR_FILE"]:
-             return last_line
+            return last_line
     return "MANUAL_REVIEW"
 
 
-# === Reasoning Agent (Router + Planner) ===
 class ReasoningAgent(RoutedAgent):
     def __init__(self):
         super().__init__("reasoning_agent")
-        # Use a lightweight model for initial routing and planning
-        self.router_model = VertexAI(model_name="gemini-2.5-flash")
+        # Use a more capable model for better planning
+        self.router_model = VertexAI(
+            model_name="gemini-2.0-flash-exp",
+            temperature=0.2
+        )
         
     @message_handler
     async def handle_reasoning(self, message: ReasoningRequest, ctx: MessageContext) -> str:
@@ -174,128 +175,156 @@ class ReasoningAgent(RoutedAgent):
         user_question = message.question
         repo_data = st.session_state.get("repo_data", {})
         
-        # --- Step 1: Action Tagging (Routing) ---
-        system_template_route = f"""
-You are an expert AI router. Analyze the user's request.
-Determine the primary action: Does this require a repository overview (reading/QA) or code refactoring (writing/changing)?
+        # --- Step 1: Enhanced Action Tagging (Routing) ---
+        system_template_route = f"""You are an expert AI code assistant analyzing a user's request.
 
-TAGS:
-REPO_OVERVIEW, REFACTOR_FILE.
+**Repository Files Available:**
+{', '.join(list(repo_data.keys())[:20])}
 
-OUTPUT FORMAT:
-1. Short reasoning (1-2 sentences).
-2. The chosen tag on a new line (e.g., REFACTOR_FILE).
+**User Request:**
+"{user_question}"
 
-User Request: {user_question}
-"""
+**Your Task:**
+Determine if this is a:
+1. REPO_OVERVIEW - User wants to understand/query the repository (questions like "what does", "explain", "show me")
+2. REFACTOR_FILE - User wants to modify/add/change code (requests like "add", "implement", "refactor", "create")
+
+**Decision Criteria:**
+- If the request contains action verbs (add, create, implement, modify, refactor, update, fix), choose REFACTOR_FILE
+- If the request is a question (what, how, why, explain, show), choose REPO_OVERVIEW
+- Default to REFACTOR_FILE if the intent is to make changes
+
+**Output Format:**
+Line 1: Brief reasoning (1 sentence)
+Line 2: Your chosen tag (REPO_OVERVIEW or REFACTOR_FILE)
+
+Example:
+The user wants to add a feedback feature, which requires code modification.
+REFACTOR_FILE"""
         
         raw = self.router_model.predict(system_template_route.strip())
-
-        # --- Normalize Gemini output to a plain string ---
+        
+        # Normalize output
         explanation = ""
         if isinstance(raw, list):
-            # Handle list output - extract the first item
             if len(raw) > 0:
                 item = raw[0]
-                if isinstance(item, dict):
-                    explanation = item.get("text") or item.get("output_text") or str(item)
-                elif hasattr(item, "text"):
-                    explanation = item.text
-                else:
-                    explanation = str(item)
-            else:
-                explanation = ""
+                explanation = item.get("text") or str(item) if isinstance(item, dict) else str(item)
         elif isinstance(raw, dict):
-            explanation = raw.get("text") or raw.get("output_text") or str(raw)
+            explanation = raw.get("text") or str(raw)
         elif hasattr(raw, "text"):
             explanation = raw.text
         else:
             explanation = str(raw)
-
+        
         chosen_tag = _parse_tag(explanation)
-
-
+        
         # --- Step 2: Execution based on Tag ---
         response = ""
-        st.session_state.current_commit_message = user_question # Default commit message
-        st.session_state.reasoning_agent_output = user_question # Store intent
-
+        st.session_state.current_commit_message = user_question
+        st.session_state.reasoning_agent_output = user_question
+        
         if chosen_tag == "REPO_OVERVIEW":
-            # Pass the request to the Overview agent (presumably handles QA via vector store)
+            from agents.sub_agents import OverviewAgent
             response = OverviewAgent().run(user_question)
             
         elif chosen_tag == "REFACTOR_FILE":
-            
             if not repo_data:
                 return "❌ Error: Repository data not loaded. Cannot perform refactoring."
+            
+            # --- Enhanced Planning and Commit Message Generation ---
+            planning_prompt = f"""You are planning a code refactoring task.
 
-            # --- Step 2b: Planning and Commit Message Generation ---
-            planning_prompt = f"""
-            The user wants to perform a multi-file refactoring. 
-            
-            First, generate a concise, professional commit message (max 12 words) that summarizes the core change.
-            
-            Second, provide a brief (1-3 line) plan of action detailing the approach (e.g., "Refactor class X, then update imports in file Y").
-            
-            User Request: {user_question}
-            Files available: {list(repo_data.keys())}
+**User Request:**
+"{user_question}"
 
-            OUTPUT FORMAT:
-            COMMIT_MESSAGE: [Concise summary]
-            PLAN: [Brief plan of action]
-            """
+**Available Files:**
+{chr(10).join([f'  - {f}' for f in list(repo_data.keys())[:20]])}
+
+**Generate:**
+1. **Commit Message:** A concise, professional Git commit message (max 50 characters)
+   - Use imperative mood (e.g., "Add feature" not "Added feature")
+   - Be specific but brief
+   
+2. **Implementation Plan:** A clear 2-4 bullet point plan of what changes will be made
+   - Which files will be modified
+   - What functionality will be added/changed
+   - Any dependencies or prerequisites
+
+**Output Format:**
+COMMIT_MESSAGE: [Your commit message]
+
+PLAN:
+• [First step]
+• [Second step]
+• [Additional steps as needed]
+
+**Example:**
+COMMIT_MESSAGE: Add user feedback form to sales forecasting
+
+PLAN:
+• Modify pages/sales_forecasting.py to add feedback form after analysis results
+• Add Streamlit form widgets (text input, rating, submit button)
+• Implement form submission handler to store feedback
+• Add visual confirmation message on submission
+
+Now generate the commit message and plan:"""
             
             planning_raw = self.router_model.predict(planning_prompt)
             
-            # --- Normalize planning output the same way ---
+            # Normalize planning output
             planning_output = ""
             if isinstance(planning_raw, list):
                 if len(planning_raw) > 0:
                     item = planning_raw[0]
-                    if isinstance(item, dict):
-                        planning_output = item.get("text") or item.get("output_text") or str(item)
-                    elif hasattr(item, "text"):
-                        planning_output = item.text
-                    else:
-                        planning_output = str(item)
+                    planning_output = item.get("text") or str(item) if isinstance(item, dict) else str(item)
             elif isinstance(planning_raw, dict):
-                planning_output = planning_raw.get("text") or planning_raw.get("output_text") or str(planning_raw)
+                planning_output = planning_raw.get("text") or str(planning_raw)
             elif hasattr(planning_raw, "text"):
                 planning_output = planning_raw.text
             else:
                 planning_output = str(planning_raw)
             
-            # Robust extraction of the commit message
-            commit_match = re.search(r"COMMIT_MESSAGE:\s*(.*)", planning_output, re.IGNORECASE)
-            commit_message = commit_match.group(1).strip() if commit_match else f"Automated refactoring: {user_question[:50]}..."
+            # Extract commit message with better regex
+            commit_match = re.search(r"COMMIT_MESSAGE:\s*(.+?)(?:\n|$)", planning_output, re.IGNORECASE)
+            if commit_match:
+                commit_message = commit_match.group(1).strip()
+                # Clean up any trailing periods or extra punctuation
+                commit_message = commit_message.rstrip('.').strip()
+            else:
+                # Fallback: create commit message from user question
+                commit_message = user_question[:50].strip()
+                if not commit_message[0].isupper():
+                    commit_message = commit_message.capitalize()
             
             st.session_state.current_commit_message = commit_message
-            st.session_state.current_refactor_plan = planning_output # Store plan for display
+            st.session_state.current_refactor_plan = planning_output
             
-            # --- Step 2c: Execution ---
+            # Display the plan
+            st.session_state.messages.append({
+                "role": "AI", 
+                "content": f"**📋 Refactoring Plan:**\n\n{planning_output}"
+            })
             
-            # Display the plan immediately
-            st.session_state.messages.append({"role": "AI", "content": f"**Refactoring Plan:**\n\n{planning_output}"})
+            # --- Execute Refactoring ---
+            from agents.sub_agents import MultiFileRefactorAgent
             
             file_results = MultiFileRefactorAgent().run(user_question, repo_data)
             
-            # Reassemble the file results using the required marker format for easy PushAgent parsing
+            # Assemble response with proper markers
             response_parts = []
+            refactor_agent = MultiFileRefactorAgent()
             
-            # Use the MultiFileRefactorAgent's helper to ensure correct markers
-            refactor_agent_instance = MultiFileRefactorAgent()
-            
-            for f, content in file_results.items():
-                # Use a specific helper to ensure consistency
-                lang, _ = refactor_agent_instance._get_file_info(f)
+            for file_path, content in file_results.items():
+                lang, _ = refactor_agent._get_file_info(file_path)
                 marker_char = "#" if lang in ["python", "ruby", "shell"] else "//"
-                response_parts.append(f"{marker_char} === {f} ===\n{content}")
+                response_parts.append(f"{marker_char} === {file_path} ===\n{content}")
             
             response = "\n\n".join(response_parts)
-
+        
         else:
-            response = f"Manual review is needed. Router output was:\n{explanation}"
-
+            response = f"Manual review needed. Router output:\n{explanation}"
+        
         return response
 
 # === Main Streamlit UI ===

@@ -1,33 +1,25 @@
+"""
+Enhanced MultiFileRefactorAgent that actually refactors code properly.
+Replace your existing MultiFileRefactorAgent in agents/sub_agents.py
+"""
+
 from langchain_google_vertexai import VertexAI
 from langchain_core.prompts import ChatPromptTemplate
 import streamlit as st
-import re
-from typing import Dict, List, Any, Tuple # <-- ADD THIS LINE
+from typing import Dict, List, Tuple
 from utils.llm_normalizer import LLMOutputNormalizer, CodeExtractor
 
 
-class OverviewAgent:
-    def __init__(self):
-        self.model = VertexAI(model_name="gemini-2.5-pro")
-    def run(self, user_question: str):
-        repo_data = st.session_state.get("repo_data", {})
-        if not repo_data: return "⚠️ No repository data available."
-        files_summary = "\n".join([f"File: {f}" for f in repo_data.keys()])
-        system_template = "You are an expert code analyst. Explain what the repository is about."
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_template),
-            ("user", "User Question: {question}\n\nRepository Files:\n{files}")
-        ]).invoke({"question": user_question, "files": files_summary})
-        return self.model.invoke(prompt)
-
 def escape_template_braces(text: str) -> str:
+    """Escape braces for template formatting."""
     return text.replace("{", "{{").replace("}", "}}")
+
 
 class MultiFileRefactorAgent:
     def __init__(self):
         self.model = VertexAI(
-            model_name="gemini-2.5-pro",
-            temperature=0.2,  # Lower temperature for more consistent refactoring
+            model_name="gemini-2.0-flash-exp",  # Using newer, more capable model
+            temperature=0.3,  # Slightly higher for creativity in refactoring
             max_output_tokens=8192
         )
         self.normalizer = LLMOutputNormalizer(provider="vertex_ai")
@@ -41,190 +33,276 @@ class MultiFileRefactorAgent:
         }
         
     def _get_file_info(self, file_path: str) -> Tuple[str, str]:
+        """Get language and extension for a file."""
         file_lower = file_path.lower()
         file_ext = next((ext for ext in self.extension_map if file_lower.endswith(ext)), None)
         lang = self.extension_map.get(file_ext, "plaintext")
         return lang, file_ext
 
-    def _build_dependency_context(self, target_file: str, all_files: List[str], repo_data: Dict[str, str]) -> str:
-        """Build context about related files that might be affected by changes."""
-        context_parts = []
-        target_content = repo_data.get(target_file, "")
-        
-        # Extract imports/dependencies from target file
-        if target_file.endswith('.py'):
-            import_pattern = r'(?:from|import)\s+[\w.]+'
-        elif target_file.endswith('.java'):
-            import_pattern = r'import\s+[\w.]+;'
-        elif target_file.endswith(('.js', '.ts')):
-            import_pattern = r'(?:import|require)\s*\(["\'][\w./]+["\']\)|import.*from\s*["\'][\w./]+["\']'
-        else:
-            return ""
-        
-        import re
-        imports = re.findall(import_pattern, target_content)
-        
-        # Find related files based on imports
-        related_files = []
-        for file_path in all_files:
-            if file_path == target_file:
-                continue
-            file_name = file_path.split('/')[-1].replace('.py', '').replace('.java', '').replace('.js', '').replace('.ts', '')
-            if any(file_name in imp for imp in imports):
-                related_files.append(file_path)
-        
-        if related_files:
-            context_parts.append("**Related files that may be affected:**")
-            for rf in related_files[:5]:  # Limit to 5 most relevant
-                # Include file signature (classes, functions) not full content
-                related_content = repo_data.get(rf, "")
-                if related_content:
-                    signature = self._extract_signature(related_content, self._get_file_info(rf)[0])
-                    context_parts.append(f"\n{rf}:\n{signature}\n")
-        
-        return "\n".join(context_parts)
-    
-    def _extract_signature(self, code: str, lang: str) -> str:
-        """Extract function/class signatures from code."""
-        signatures = []
-        lines = code.split('\n')[:50]  # First 50 lines for context
-        
-        for line in lines:
-            stripped = line.strip()
-            if lang == "python":
-                if stripped.startswith('class ') or stripped.startswith('def '):
-                    signatures.append(line)
-            elif lang == "java":
-                if 'class ' in stripped or 'interface ' in stripped or 'public ' in stripped:
-                    signatures.append(line)
-            elif lang in ["javascript", "typescript"]:
-                if stripped.startswith('class ') or stripped.startswith('function ') or 'const ' in stripped and '=>' in stripped:
-                    signatures.append(line)
-        
-        return '\n'.join(signatures[:20]) if signatures else "// No clear signatures found"
+    def _analyze_request(self, user_question: str) -> Dict[str, any]:
+        """
+        Analyze the user's request to understand what needs to be done.
+        Returns a structured analysis.
+        """
+        analysis_prompt = f"""Analyze this refactoring request and provide a structured response.
+
+Request: "{user_question}"
+
+Provide:
+1. Primary Goal: What is the main objective?
+2. Required Changes: What specific modifications are needed?
+3. Files Likely Affected: What types of files would need changes?
+4. Implementation Strategy: How should this be implemented?
+
+Output as JSON-like structure."""
+
+        try:
+            response = self.model.predict(analysis_prompt)
+            normalized = self.normalizer.normalize(response)
+            return {"analysis": normalized.text, "raw_request": user_question}
+        except Exception as e:
+            return {"analysis": user_question, "raw_request": user_question}
 
     def _identify_target_files(self, user_question: str, all_files: List[str]) -> List[str]:
-        """Identify files that need refactoring based on user question."""
+        """
+        Intelligently identify which files need modification.
+        Uses both keyword matching and semantic understanding.
+        """
         user_question_lower = user_question.lower()
         target_files = []
         
-        # Direct file mentions
+        # Direct file/path mentions
         for f in all_files:
             basename = f.split('/')[-1].lower()
-            if f.lower() in user_question_lower or basename in user_question_lower:
+            path_parts = f.lower().split('/')
+            
+            # Check if any part of the path is mentioned
+            if any(part in user_question_lower for part in path_parts):
+                target_files.append(f)
+            elif basename in user_question_lower:
                 target_files.append(f)
         
-        # Keyword-based detection
-        if not target_files:
-            keywords = {
-                'test': lambda f: 'test' in f.lower(),
-                'config': lambda f: any(x in f.lower() for x in ['config', 'settings', '.env']),
-                'main': lambda f: 'main' in f.lower() or 'app' in f.lower(),
-                'util': lambda f: 'util' in f.lower() or 'helper' in f.lower(),
-            }
-            
-            for keyword, matcher in keywords.items():
-                if keyword in user_question_lower:
-                    target_files.extend([f for f in all_files if matcher(f)])
+        # If specific files mentioned, use only those
+        if target_files:
+            return sorted(list(set(target_files)))
         
-        return sorted(list(set(target_files)))
+        # Semantic keyword-based detection
+        keyword_patterns = {
+            'sales': lambda f: any(x in f.lower() for x in ['sales', 'forecast', 'revenue']),
+            'forecast': lambda f: 'forecast' in f.lower() or 'predict' in f.lower(),
+            'dashboard': lambda f: 'dashboard' in f.lower() or 'home' in f.lower(),
+            'auth': lambda f: any(x in f.lower() for x in ['auth', 'login', 'user']),
+            'database': lambda f: any(x in f.lower() for x in ['db', 'database', 'model']),
+            'api': lambda f: 'api' in f.lower() or 'endpoint' in f.lower(),
+            'test': lambda f: 'test' in f.lower(),
+            'config': lambda f: any(x in f.lower() for x in ['config', 'settings', '.env']),
+            'feedback': lambda f: 'feedback' in f.lower() or 'form' in f.lower(),
+            'analysis': lambda f: any(x in f.lower() for x in ['analysis', 'analytics', 'report']),
+        }
+        
+        for keyword, matcher in keyword_patterns.items():
+            if keyword in user_question_lower:
+                matched_files = [f for f in all_files if matcher(f)]
+                target_files.extend(matched_files)
+        
+        # Remove duplicates and filter out non-code files
+        target_files = sorted(list(set(target_files)))
+        
+        # Filter out config files unless specifically mentioned
+        if 'config' not in user_question_lower and 'settings' not in user_question_lower:
+            target_files = [f for f in target_files if not any(
+                x in f.lower() for x in ['.toml', '.json', '.yaml', '.gitignore', 'readme']
+            )]
+        
+        return target_files[:10]  # Limit to 10 files max
+
+    def _build_refactoring_prompt(
+        self, 
+        file_path: str, 
+        file_content: str,
+        user_question: str,
+        request_analysis: Dict,
+        all_files: List[str],
+        lang: str
+    ) -> str:
+        """
+        Build a comprehensive refactoring prompt with clear instructions.
+        """
+        marker_char = "#" if lang in ["python", "ruby", "shell"] else "//"
+        
+        # Build context about other files
+        related_files = [f for f in all_files if f != file_path][:5]
+        files_context = "\n".join([f"  - {f}" for f in related_files])
+        
+        prompt = f"""You are an expert {lang} developer performing a code refactoring task.
+
+**CURRENT FILE: {file_path}**
+
+**USER REQUEST:**
+{user_question}
+
+**REQUEST ANALYSIS:**
+{request_analysis.get('analysis', 'No analysis available')}
+
+**REPOSITORY CONTEXT:**
+Other files in this repository:
+{files_context}
+
+**YOUR TASK:**
+You must ACTUALLY IMPLEMENT the requested changes. Do not just return the original code.
+
+**CRITICAL REQUIREMENTS:**
+1. **MAKE REAL CHANGES** - The code MUST be different from the original
+2. **IMPLEMENT THE FEATURE** - Add the requested functionality
+3. **PRESERVE EXISTING FUNCTIONALITY** - Don't break what works
+4. **FOLLOW {lang.upper()} BEST PRACTICES** - Use proper conventions
+5. **ADD HELPFUL COMMENTS** - Explain significant changes
+6. **MAINTAIN CODE STRUCTURE** - Keep imports, class definitions, etc.
+
+**SPECIFIC INSTRUCTIONS FOR THIS REQUEST:**
+- If adding a feature: Write the complete implementation
+- If modifying behavior: Update the relevant functions/classes
+- If adding UI elements: Include all necessary widgets and handlers
+- If adding database features: Include schema changes and queries
+- Add error handling where appropriate
+- Add docstrings to new functions
+
+**FORBIDDEN ACTIONS:**
+- DO NOT return unchanged code
+- DO NOT add only comments without functional changes
+- DO NOT remove existing features unless explicitly requested
+- DO NOT add placeholder comments like "# TODO: implement X"
+
+**OUTPUT FORMAT:**
+Start with: {marker_char} === {file_path} ===
+Then output ONLY the COMPLETE, REFACTORED code.
+NO explanations, NO markdown fences, NO preamble.
+
+**EXAMPLE OF GOOD OUTPUT:**
+{marker_char} === {file_path} ===
+import streamlit as st
+# ... COMPLETE WORKING CODE WITH ACTUAL CHANGES ...
+
+Begin your refactoring now:"""
+
+        return prompt
+
+    def _validate_changes(self, original: str, refactored: str, file_path: str) -> Tuple[bool, str]:
+        """
+        Validate that meaningful changes were made.
+        Returns (is_valid, reason)
+        """
+        # Remove whitespace for comparison
+        original_stripped = ''.join(original.split())
+        refactored_stripped = ''.join(refactored.split())
+        
+        # Check 1: Files should be different
+        if original_stripped == refactored_stripped:
+            return False, "No changes detected (code is identical)"
+        
+        # Check 2: Refactored should not be significantly shorter (unless deleting)
+        if len(refactored_stripped) < len(original_stripped) * 0.7:
+            return False, "Refactored code is too short (possible truncation)"
+        
+        # Check 3: Should have similar structure (imports, functions)
+        if 'def ' in original and 'def ' not in refactored:
+            return False, "Function definitions missing in refactored code"
+        
+        if 'class ' in original and 'class ' not in refactored:
+            return False, "Class definitions missing in refactored code"
+        
+        # Check 4: Basic syntax check for Python
+        if file_path.endswith('.py'):
+            try:
+                import ast
+                ast.parse(refactored)
+            except SyntaxError as e:
+                return False, f"Syntax error in refactored code: {e}"
+        
+        return True, "Changes validated"
 
     def run(self, user_question: str, repo_data: Dict[str, str]) -> Dict[str, str]:
-        """Main refactoring pipeline with enhanced context."""
+        """
+        Main refactoring pipeline with validation and retry logic.
+        """
+        # Step 1: Analyze the request
+        st.info("🔍 Analyzing your request...")
+        request_analysis = self._analyze_request(user_question)
+        
+        # Step 2: Identify target files
         all_files = list(repo_data.keys())
         target_files = self._identify_target_files(user_question, all_files)
         
-        # If no specific files identified, use heuristics or ask user
         if not target_files:
-            st.warning("⚠️ No specific files identified. Analyzing repository structure...")
-            # Apply to most likely candidates (exclude config/docs)
-            target_files = [f for f in all_files 
-                          if not any(x in f.lower() for x in ['readme', '.md', '.txt', '.json', '.yaml', 'license'])]
-            target_files = target_files[:5]  # Limit to 5 files
+            st.warning("⚠️ No specific files identified. Applying to main code files...")
+            # Fallback: use Python files in root or pages directory
+            target_files = [f for f in all_files if f.endswith('.py') and 
+                          ('pages/' in f or '/' not in f)][:5]
+        
+        st.info(f"📝 Identified {len(target_files)} file(s) for refactoring")
         
         results = {}
-        all_files_list_str = "\n".join(all_files)
+        successful_changes = 0
         
-        for idx, f in enumerate(target_files):
-            st.info(f"🔄 Refactoring {idx+1}/{len(target_files)}: {f}")
+        # Step 3: Process each file
+        for idx, file_path in enumerate(target_files, 1):
+            st.info(f"🔄 Refactoring ({idx}/{len(target_files)}): {file_path}")
             
-            content = repo_data[f]
-            lang, _ = self._get_file_info(f)
+            original_content = repo_data[file_path]
+            lang, _ = self._get_file_info(file_path)
             
-            # Build enhanced context
-            dependency_context = self._build_dependency_context(f, all_files, repo_data)
+            # Build the refactoring prompt
+            prompt_text = self._build_refactoring_prompt(
+                file_path=file_path,
+                file_content=original_content,
+                user_question=user_question,
+                request_analysis=request_analysis,
+                all_files=all_files,
+                lang=lang
+            )
             
-            marker_char = "#" if lang in ["python", "ruby", "shell"] else "//"
-            file_marker = f"{marker_char} === {f} ==="
+            # Escape content for template
+            escaped_content = escape_template_braces(original_content)
             
-            # ENHANCED SYSTEM PROMPT
-            system_instruction = f"""You are an expert {lang} refactoring specialist.
-
-**REFACTORING TASK:**
-File: {f}
-Goal: {user_question}
-
-**REPOSITORY STRUCTURE:**
-{all_files_list_str}
-
-{dependency_context}
-
-**REFACTORING REQUIREMENTS:**
-1. Maintain all existing functionality - DO NOT remove features
-2. Preserve API contracts (function signatures, class interfaces)
-3. Keep all imports/dependencies unless explicitly asked to change
-4. Follow {lang} best practices and conventions
-5. Add comments for significant changes
-6. Ensure backward compatibility
-
-**CRITICAL OUTPUT FORMAT:**
-- Start with: {file_marker}
-- Follow with ONLY the complete refactored code
-- NO markdown fences (```), explanations, or preamble
-- Include ALL original code with modifications
-- DO NOT truncate or summarize
-
-**EXAMPLE OUTPUT:**
-{file_marker}
-[Your complete refactored code here]
-"""
-            
-            escaped_content = content.replace("{", "{{").replace("}", "}}")
-            
-            prompt_messages = [
-                ("system", system_instruction),
-                ("user", f"""Refactor this code following the requirements above:
-
-[CODE START]
-{escaped_content}
-[CODE END]
-
-Remember: Output ONLY the marker followed by complete code. No explanations.""")
-            ]
-            
-            prompt = ChatPromptTemplate.from_messages(prompt_messages)
+            full_prompt = prompt_text + f"\n\n**ORIGINAL CODE:**\n```{lang}\n{escaped_content}\n```"
             
             try:
-                raw = self.model.predict(prompt)
-                normalized = self.normalizer.normalize(raw)
+                # Call the LLM
+                raw_response = self.model.predict(full_prompt)
+                
+                # Normalize output
+                normalized = self.normalizer.normalize(raw_response)
                 response_str = normalized.text
                 
-                # Clean and validate output
+                # Extract code
+                marker_char = "#" if lang in ["python", "ruby", "shell"] else "//"
+                file_marker = f"{marker_char} === {file_path} ==="
+                
                 if response_str.startswith(file_marker):
                     cleaned_content = response_str[len(file_marker):].strip()
                 else:
                     cleaned_content = self.code_extractor.remove_markdown_fences(response_str)
                     cleaned_content = self.code_extractor.remove_ai_preamble(cleaned_content)
                 
-                # Validation: Ensure we got substantial code back
-                if len(cleaned_content) < len(content) * 0.5:
-                    st.warning(f"⚠️ Refactored {f} seems incomplete. Using original.")
-                    results[f] = content
+                # Validate changes
+                is_valid, reason = self._validate_changes(original_content, cleaned_content, file_path)
+                
+                if is_valid:
+                    results[file_path] = cleaned_content
+                    successful_changes += 1
+                    st.success(f"✅ {file_path} - Changes validated")
                 else:
-                    results[f] = cleaned_content
-                    
+                    st.warning(f"⚠️ {file_path} - {reason}, keeping original")
+                    results[file_path] = original_content
+                
             except Exception as e:
-                st.error(f"❌ Error processing {f}: {str(e)}")
-                results[f] = content
+                st.error(f"❌ Error processing {file_path}: {str(e)}")
+                results[file_path] = original_content
+        
+        # Final summary
+        if successful_changes == 0:
+            st.error("❌ No files were successfully modified. The AI may need more context or a clearer request.")
+        else:
+            st.success(f"✅ Successfully modified {successful_changes}/{len(target_files)} file(s)")
         
         return results
