@@ -165,7 +165,7 @@ class ReasoningAgent(RoutedAgent):
         super().__init__("reasoning_agent")
         # Use a more capable model for better planning
         self.router_model = VertexAI(
-            model_name="gemini-2.0-flash-exp",
+            model_name="gemini-2.5-pro",
             temperature=0.2
         )
         
