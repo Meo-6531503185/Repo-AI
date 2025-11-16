@@ -393,6 +393,26 @@ class GitHubAPIWrapper(BaseModel):
             return "Deleted file " + file_path
         except Exception as e:
             return "Unable to delete file due to error:\n" + str(e)
+    def create_pull_request(self, title: str, body: str, head: str, base: str) -> str:
+        """
+        Create a pull request.
+        
+        Args:
+            title: PR title
+            body: PR description
+            head: Branch to merge from
+            base: Branch to merge into
+        """
+        try:
+            pr = self.github_repo_instance.create_pull(
+                title=title,
+                body=body,
+                head=head,
+                base=base
+            )
+            return f"✅ Pull Request created: {pr.html_url}"
+        except Exception as e:
+            return f"❌ Failed to create PR: {str(e)}"
         
 wrapper = GitHubAPIWrapper(
     github_repository = "moepyaePK/dormbooking"

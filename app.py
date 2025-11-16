@@ -24,8 +24,6 @@ from autogen_core import (
 from githubTest import * # Assuming GitHubAPIWrapper is here
 from fetching import * # Assuming read_all_repo_files is here
 from processing import * # Assuming other utilities are here
-from testing import * 
-from push import * # Assuming push utilities are here
 from agents.sub_agents import (
     OverviewAgent,
     MultiFileRefactorAgent,
@@ -34,6 +32,11 @@ from agents.push_agent import PushAgent # Assuming PushAgent is in agents/sub_ag
 
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+
+# ADD THESE IMPORTS AFTER EXISTING IMPORTS
+from validators.code_validators import ValidationPipeline
+from utils.error_handlers import ErrorHandler, UserFriendlyError, ErrorCategory
+from utils.llm_normalizer import LLMOutputNormalizer, CodeExtractor
 
 
 # === Load environment ===
@@ -394,10 +397,10 @@ def main():
             if not "PLAN:" in response and response.strip():
                  st.session_state.messages.append({"role": "AI", "content": response})
 
-
     # === Display conversation ===
-    refactor_agent_instance = MultiFileRefactorAgent() # Instance needed for file info helper
-    
+
+    refactor_agent_instance = MultiFileRefactorAgent()
+
     for i, message in enumerate(st.session_state.messages):
         role = message["role"]
         content = message.get("content", "")
@@ -405,7 +408,7 @@ def main():
         with st.chat_message(role):
             if role == "AI":
                 
-                # Check for the multi-file refactoring marker format (// === file === CODE)
+                # Check for the multi-file refactoring marker format
                 if content.startswith("// ===") or content.startswith("# ==="):
                     
                     st.info(f"AI Refactoring Results:")
@@ -429,6 +432,33 @@ def main():
                             
                             full_refactored_code += f"\n// File: {file_name}\n" + file_content
                         
+                        # --- Validation and Diff ---
+                        st.subheader("🔍 Code Review")
+                        
+                        # Initialize validation pipeline
+                        validation_pipeline = ValidationPipeline()
+                        
+                        # Detect language helper
+                        def detect_language(file_path: str) -> str:
+                            lang, _ = refactor_agent_instance._get_file_info(file_path)
+                            return lang
+                        
+                        # Validate and generate diffs
+                        original_files = st.session_state.get("repo_data", {})
+                        validation_results, diff_data = validation_pipeline.validate_and_diff(
+                            original_files,
+                            extracted_files,
+                            detect_language
+                        )
+                        
+                        # Display validation summary
+                        all_valid = validation_pipeline.display_validation_summary(validation_results)
+                        
+                        # Display diffs
+                        st.subheader("📊 Changes Preview")
+                        for diff in diff_data:
+                            validation_pipeline.diff_visualizer.render_diff_in_streamlit(diff)
+                        
                         # --- Intent Fulfillment ---
                         if "reasoning_agent_output" in st.session_state and model:
                             st.subheader("🎯 Intent Fulfillment Check")
@@ -440,38 +470,85 @@ def main():
                             )
                             st.metric(label="Intent Alignment Score", value=f"{score} %")
 
-                        # --- Push to GitHub ---
-                        commit_msg = st.session_state.get("current_commit_message", "AI Refactoring (No message generated)")
-                        st.write(f"Proposed Commit Message: **{commit_msg}**")
+                        # --- Push to GitHub (ONLY IF VALIDATION PASSES) ---
+                        commit_msg = st.session_state.get("current_commit_message", "AI Refactoring")
+                        st.write(f"Proposed Commit: **{commit_msg}**")
                         
-                        if st.button("🚀 Create Pull Request on GitHub", key=f"push_{i}"):
-                            
-                            if not st.session_state.GITHUB_REPOSITORY:
-                                st.error("Cannot push: Repository URL not set.")
-                            else:
-                                with st.spinner(f"Creating branch and PR: {commit_msg}"):
-                                    # Instantiate the push agent with credentials
-                                    current_push_agent = PushAgent(
-                                        github_app_id=github_token,
-                                        github_private_key=github_private_file
+                        # FIXED: Create original_paths mapping correctly
+                        # Map filename to full path from repo_data
+                        original_paths = {}
+                        for file_name in extracted_files.keys():
+                            # Try to find the original path in repo_data
+                            for original_path in original_files.keys():
+                                if original_path.endswith(file_name) or original_path == file_name:
+                                    original_paths[file_name] = original_path
+                                    break
+                        
+                        # CHANGED: Only show button if validation passed
+                        if all_valid:
+                            if st.button("✅ Approve and Create PR", key=f"push_{i}"):
+                                
+                                if not st.session_state.GITHUB_REPOSITORY:
+                                    error_handler = ErrorHandler()
+                                    error = error_handler.handle_github_auth_error(
+                                        Exception("Repository URL not set")
                                     )
-                                    result = current_push_agent.run(
-                                        ai_response=content, # Pass the raw content for re-extraction
-                                        repo_name=st.session_state.GITHUB_REPOSITORY,
-                                        commit_message=commit_msg 
-                                    )
-                                st.success(result)
+                                    error_handler.display_error(error)
+                                else:
+                                    with st.spinner(f"Creating PR: {commit_msg}"):
+                                        try:
+                                            current_push_agent = PushAgent(
+                                                github_app_id=github_token,
+                                                github_private_key=github_private_file
+                                            )
+                                            
+                                            # FIXED: Pass original_paths to maintain file structure
+                                            result = current_push_agent.run(
+                                                ai_response=content,
+                                                repo_name=st.session_state.GITHUB_REPOSITORY,
+                                                commit_message=commit_msg,
+                                                original_paths=original_paths  # Pass the mapping
+                                            )
+                                            st.success(result)
+                                            
+                                        except Exception as e:
+                                            error_handler = ErrorHandler()
+                                            # Try to categorize the error
+                                            if "rate limit" in str(e).lower():
+                                                error = error_handler.handle_rate_limit_error(e)
+                                            elif "auth" in str(e).lower():
+                                                error = error_handler.handle_github_auth_error(e)
+                                            else:
+                                                # Generic error
+                                                from utils.error_handlers import UserFriendlyError, ErrorCategory
+                                                error = UserFriendlyError(
+                                                    category=ErrorCategory.GITHUB_API,
+                                                    title="GitHub Operation Failed",
+                                                    message="Failed to create PR",
+                                                    technical_details=str(e),
+                                                    suggested_actions=[
+                                                        "Check technical details below",
+                                                        "Verify GitHub App permissions",
+                                                        "Ensure repository name is correct",
+                                                        "Try again in a few moments"
+                                                    ],
+                                                    can_retry=True
+                                                )
+                                            error_handler.display_error(error)
+                        else:
+                            st.warning("⚠️ Please fix validation errors before pushing to GitHub")
+                            st.info("You can manually review and fix the code, then retry")
                     
                     else:
                         st.warning("Could not extract refactored files from AI output. Check logs.")
-                        st.code(content) # Show raw content if parsing failed
+                        st.code(content)
 
                 else:
                     # Display general text responses (QA, planning, errors)
                     st.markdown(content.replace("\n", "  \n"))
 
             else:
-                # 🧍 Display user messages normally
+                # Display user messages normally
                 st.markdown(f"**You:**  {content.replace('\n', '  \n')}")
 
 
