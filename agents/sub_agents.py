@@ -39,7 +39,7 @@ class MultiFileRefactorAgent:
 
     def __init__(self):
         self.model = VertexAI(
-            model_name="gemini-2.5-flash",
+            model_name="gemini-2.5-pro",
             temperature=0.3,
             max_output_tokens=24000,
         )

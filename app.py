@@ -1,4 +1,3 @@
-
 #############################Autogen######################################
 import streamlit as st
 from dotenv import load_dotenv
@@ -32,8 +31,11 @@ from agents.push_agent import PushAgent # Assuming PushAgent is in agents/sub_ag
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-# ADD THESE IMPORTS AFTER EXISTING IMPORTS
-from validators.code_validators import ValidationPipeline
+# ADD THESE IMPORTS - FIXED import path
+from validators.comprehensive_validators import (  # FIXED: singular, not plural
+    ComprehensiveValidationPipeline,
+    ValidationResult
+)
 from utils.error_handlers import ErrorHandler, UserFriendlyError, ErrorCategory
 from utils.llm_normalizer import LLMOutputNormalizer, CodeExtractor
 
@@ -47,13 +49,28 @@ if github_token and github_private_file:
 else:
     print("⚠️ GitHub Token not found")
 
-# === Initialize embedding model once ===
+# === Initialize embedding model and validation pipeline ONCE at module level ===
 try:
-    # Use the official Google Vertex AI Embeddings client
     model = VertexAIEmbeddings(model_name="text-embedding-004")
+    
+    # Initialize validation LLM
+    validation_llm = VertexAI(
+        model_name="gemini-2.5-pro",
+        temperature=0.2
+    )
+    
+    # Initialize comprehensive validation pipeline
+    validation_pipeline = ComprehensiveValidationPipeline(
+        embedding_model=model,
+        llm_client=validation_llm
+    )
+    
+    print("✅ Validation pipeline initialized successfully")
+    
 except Exception as e:
-    st.error(f"Error initializing VertexAI Embeddings: {e}")
-    model = None # Handle case where model fails to initialize
+    st.error(f"Error initializing models: {e}")
+    model = None
+    validation_pipeline = None
 
 # === Helper: Extract repo info ===
 def extract_repo_info(url: str):
@@ -61,88 +78,6 @@ def extract_repo_info(url: str):
     pattern = r"https://github\.com/([^/]+)/([^/]+)"
     match = re.match(pattern, url)
     return match.groups() if match else (None, None)
-
-def extract_code_chunks(code_string: str) -> Dict[str, str]:
-    """
-    Splits a Python code string into meaningful chunks (functions and classes) 
-    using the Abstract Syntax Tree (AST).
-    """
-    chunks = {}
-    if not code_string or not isinstance(code_string, str):
-        return {"Full Code Result": ""}
-    
-    try:
-        # We must use inspect.getsource, which requires the AST node to be compiled/executed 
-        # within a temporary module structure. This is often complex and prone to errors 
-        # unless the code is perfectly formatted/self-contained.
-        # Fallback to simple line-based splitting if AST fails on complex input.
-        
-        tree = ast.parse(code_string)
-        
-        for node in ast.iter_child_nodes(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-                name = node.name
-                source_code = inspect.getsource(
-                    compile(ast.Module(body=[node], type_ignores=[]), '<string>', 'exec')
-                )
-                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    chunks[f"Function: {name}"] = source_code.strip()
-                elif isinstance(node, ast.ClassDef):
-                    chunks[f"Class: {name}"] = source_code.strip()
-            
-    except Exception as e:
-        # Fallback for non-Python code or complex syntax errors
-        # print(f"AST parsing failed: {e}. Using single chunk.")
-        if code_string.strip():
-            chunks["Full Code Result"] = code_string.strip()
-        
-    if not chunks and code_string.strip():
-        chunks["Full Code Result"] = code_string.strip()
-
-    return chunks
-
-# === Intent Similarity Function ===
-def check_intent_similarity(user_request: str, full_refactored_code: str, embedding_model: VertexAIEmbeddings) -> float:
-    """
-    Checks intent fulfillment by finding the MAXIMUM cosine similarity 
-    between the user intent and ALL logical code chunks.
-    """
-    if not embedding_model:
-        return 0.0 # Return 0 if the embedding model failed to load
-        
-    try:
-        # 1. Get Intent Embedding
-        user_emb = embedding_model.embed_query(user_request)
-        
-        # 2. Extract Code Chunks
-        code_chunks = extract_code_chunks(full_refactored_code)
-        
-        max_score = 0.0
-        
-        # 3. Compare Intent to Each Code Chunk
-        for chunk_code in code_chunks.values():
-            if not chunk_code: continue
-            
-            # Get Chunk Embedding
-            chunk_emb = embedding_model.embed_query(chunk_code)
-            
-            # Calculate Similarity
-            # Ensure embeddings are numpy arrays for cosine_similarity
-            user_array = np.array(user_emb).reshape(1, -1)
-            chunk_array = np.array(chunk_emb).reshape(1, -1)
-            
-            current_score = cosine_similarity(user_array, chunk_array)[0][0]
-            
-            if current_score > max_score:
-                max_score = current_score
-
-        # 4. Format Output
-        percentage = round(max_score * 100, 2)
-        return percentage
-        
-    except Exception as e:
-        print(f"Error calculating intent similarity: {e}")
-        return 0.0
 
 
 @dataclass
@@ -327,6 +262,7 @@ Now generate the commit message and plan:"""
         
         return response
 
+
 # === Main Streamlit UI ===
 def main():
     st.set_page_config(page_title="GitHub Repositories Refactorer")
@@ -339,7 +275,8 @@ def main():
         "repo_data_fetched": False,
         "current_commit_message": "AI Refactoring based on user request",
         "reasoning_agent_output": "", # Stores the user request for intent check
-        "vector_store": None
+        "vector_store": None,
+        "validation_passed": False  # Add this
     }.items():
         if key not in st.session_state:
             st.session_state[key] = default
@@ -427,7 +364,6 @@ def main():
                  st.session_state.messages.append({"role": "AI", "content": response})
 
     # === Display conversation ===
-
     refactor_agent_instance = MultiFileRefactorAgent()
 
     for i, message in enumerate(st.session_state.messages):
@@ -449,124 +385,110 @@ def main():
                     if extracted_files:
                         st.subheader(f"Files Modified ({len(extracted_files)})")
                         
-                        full_refactored_code = ""
+                        # Display code for each file
                         for file_name, file_content in extracted_files.items():
-                            
-                            # Determine language for syntax highlighting
                             lang, _ = refactor_agent_instance._get_file_info(file_name)
-                            
                             st.markdown(f"**File:** `{file_name}`")
                             st.code(file_content, language=lang, line_numbers=True)
                             st.markdown("---")
+                        
+                        # --- COMPREHENSIVE VALIDATION ---
+                        if validation_pipeline:
+                            st.subheader("🔍 Comprehensive Code Validation")
                             
-                            full_refactored_code += f"\n// File: {file_name}\n" + file_content
-                        
-                        # --- Validation and Diff ---
-                        st.subheader("🔍 Code Review")
-                        
-                        # Initialize validation pipeline
-                        validation_pipeline = ValidationPipeline()
-                        
-                        # Detect language helper
-                        def detect_language(file_path: str) -> str:
-                            lang, _ = refactor_agent_instance._get_file_info(file_path)
-                            return lang
-                        
-                        # Validate and generate diffs
-                        original_files = st.session_state.get("repo_data", {})
-                        validation_results, diff_data = validation_pipeline.validate_and_diff(
-                            original_files,
-                            extracted_files,
-                            detect_language
-                        )
-                        
-                        # Display validation summary
-                        all_valid = validation_pipeline.display_validation_summary(validation_results)
-                        
-                        # Display diffs
-                        st.subheader("📊 Changes Preview")
-                        for diff in diff_data:
-                            validation_pipeline.diff_visualizer.render_diff_in_streamlit(diff)
-                        
-                        # --- Intent Fulfillment ---
-                        if "reasoning_agent_output" in st.session_state and model:
-                            st.subheader("🎯 Intent Fulfillment Check")
+                            # Detect language helper
+                            def detect_language(file_path: str) -> str:
+                                lang, _ = refactor_agent_instance._get_file_info(file_path)
+                                return lang
                             
-                            score = check_intent_similarity(
-                                st.session_state.reasoning_agent_output,
-                                full_refactored_code,
-                                embedding_model=model
+                            # Run validation on all files
+                            original_files = st.session_state.get("repo_data", {})
+                            
+                            validation_results = validation_pipeline.validate_all_files(
+                                user_request=st.session_state.get("reasoning_agent_output", user_question),
+                                original_files=original_files,
+                                refactored_files=extracted_files,
+                                language_detector=detect_language
                             )
-                            st.metric(label="Intent Alignment Score", value=f"{score} %")
+                            
+                            # Display results but DON'T block based on pass/fail
+                            all_valid = validation_pipeline.display_validation_summary_streamlit(
+                                validation_results
+                            )
+                            
+                            # Store validation status for informational purposes only
+                            st.session_state.validation_passed = all_valid
+                            
+                            # Show warning if validation failed, but don't block
+                            if not all_valid:
+                                st.warning("⚠️ Some validation checks failed. Review the details above before proceeding.")
+                                st.info("💡 You can still create a PR - the validation results are advisory only.")
+                            
+                        else:
+                            st.warning("⚠️ Validation pipeline not initialized")
+                            all_valid = True
+                            st.session_state.validation_passed = True
 
-                        # --- Push to GitHub (ONLY IF VALIDATION PASSES) ---
+                        # --- Push to GitHub (ALWAYS ENABLED) ---
                         commit_msg = st.session_state.get("current_commit_message", "AI Refactoring")
                         st.write(f"Proposed Commit: **{commit_msg}**")
                         
-                        # FIXED: Create original_paths mapping correctly
                         # Map filename to full path from repo_data
                         original_paths = {}
                         for file_name in extracted_files.keys():
-                            # Try to find the original path in repo_data
                             for original_path in original_files.keys():
                                 if original_path.endswith(file_name) or original_path == file_name:
                                     original_paths[file_name] = original_path
                                     break
                         
-                        # CHANGED: Only show button if validation passed
-                        if all_valid:
-                            if st.button("✅ Approve and Create PR", key=f"push_{i}"):
-                                
-                                if not st.session_state.GITHUB_REPOSITORY:
-                                    error_handler = ErrorHandler()
-                                    error = error_handler.handle_github_auth_error(
-                                        Exception("Repository URL not set")
-                                    )
-                                    error_handler.display_error(error)
-                                else:
-                                    with st.spinner(f"Creating PR: {commit_msg}"):
-                                        try:
-                                            current_push_agent = PushAgent(
-                                                github_app_id=github_token,
-                                                github_private_key=github_private_file
+                        # CHANGED: Always show button, regardless of validation status
+                        button_label = "✅ Approve and Create PR" if st.session_state.validation_passed else "⚠️ Create PR (Validation Issues Present)"
+                        
+                        if st.button(button_label, key=f"push_{i}"):
+                            
+                            if not st.session_state.GITHUB_REPOSITORY:
+                                error_handler = ErrorHandler()
+                                error = error_handler.handle_github_auth_error(
+                                    Exception("Repository URL not set")
+                                )
+                                error_handler.display_error(error)
+                            else:
+                                with st.spinner(f"Creating PR: {commit_msg}"):
+                                    try:
+                                        current_push_agent = PushAgent(
+                                            github_app_id=github_token,
+                                            github_private_key=github_private_file
+                                        )
+                                        
+                                        result = current_push_agent.run(
+                                            ai_response=content,
+                                            repo_name=st.session_state.GITHUB_REPOSITORY,
+                                            commit_message=commit_msg,
+                                            original_paths=original_paths
+                                        )
+                                        st.success(result)
+                                        
+                                    except Exception as e:
+                                        error_handler = ErrorHandler()
+                                        if "rate limit" in str(e).lower():
+                                            error = error_handler.handle_rate_limit_error(e)
+                                        elif "auth" in str(e).lower():
+                                            error = error_handler.handle_github_auth_error(e)
+                                        else:
+                                            error = UserFriendlyError(
+                                                category=ErrorCategory.GITHUB_API,
+                                                title="GitHub Operation Failed",
+                                                message="Failed to create PR",
+                                                technical_details=str(e),
+                                                suggested_actions=[
+                                                    "Check technical details below",
+                                                    "Verify GitHub App permissions",
+                                                    "Ensure repository name is correct",
+                                                    "Try again in a few moments"
+                                                ],
+                                                can_retry=True
                                             )
-                                            
-                                            # FIXED: Pass original_paths to maintain file structure
-                                            result = current_push_agent.run(
-                                                ai_response=content,
-                                                repo_name=st.session_state.GITHUB_REPOSITORY,
-                                                commit_message=commit_msg,
-                                                original_paths=original_paths  # Pass the mapping
-                                            )
-                                            st.success(result)
-                                            
-                                        except Exception as e:
-                                            error_handler = ErrorHandler()
-                                            # Try to categorize the error
-                                            if "rate limit" in str(e).lower():
-                                                error = error_handler.handle_rate_limit_error(e)
-                                            elif "auth" in str(e).lower():
-                                                error = error_handler.handle_github_auth_error(e)
-                                            else:
-                                                # Generic error
-                                                from utils.error_handlers import UserFriendlyError, ErrorCategory
-                                                error = UserFriendlyError(
-                                                    category=ErrorCategory.GITHUB_API,
-                                                    title="GitHub Operation Failed",
-                                                    message="Failed to create PR",
-                                                    technical_details=str(e),
-                                                    suggested_actions=[
-                                                        "Check technical details below",
-                                                        "Verify GitHub App permissions",
-                                                        "Ensure repository name is correct",
-                                                        "Try again in a few moments"
-                                                    ],
-                                                    can_retry=True
-                                                )
-                                            error_handler.display_error(error)
-                        else:
-                            st.warning("⚠️ Please fix validation errors before pushing to GitHub")
-                            st.info("You can manually review and fix the code, then retry")
+                                        error_handler.display_error(error)
                     
                     else:
                         st.warning("Could not extract refactored files from AI output. Check logs.")
