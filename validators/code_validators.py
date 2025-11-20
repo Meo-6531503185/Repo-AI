@@ -226,7 +226,7 @@ class ValidationPipeline:
             st.markdown("---")
             for result in validation_results:
                 if result.errors or result.warnings:
-                    with st.expander(f"{'❌' if result.errors else '⚠️'} {result.file_path}"):
+                    with st.expander(f"{result.file_path}"):
                         if result.errors:
                             st.error("**Errors:**")
                             for error in result.errors:
@@ -240,8 +240,8 @@ class ValidationPipeline:
         all_valid = total_errors == 0
         
         if all_valid:
-            st.success("✅ All validations passed!")
+            st.success("All validations passed!")
         else:
-            st.error("❌ Validation failed. Fix errors before pushing.")
+            st.error("Validation failed. Fix errors before pushing.")
         
         return all_valid

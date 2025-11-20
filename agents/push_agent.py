@@ -102,7 +102,7 @@ class PushAgent:
             if "Error" in branch_result or "Unable" in branch_result:
                 raise Exception(f"Branch creation failed: {branch_result}")
             
-            st.success(f"✅ Created branch: {branch_name}")
+            st.success(f"Created branch: {branch_name}")
             
             # Push files
             pushed_files = []
@@ -131,7 +131,7 @@ class PushAgent:
                         failed_files.append((file_path, result))
                     else:
                         pushed_files.append(file_path)
-                        st.success(f"✅ Pushed: {file_path}")
+                        st.success(f"Pushed: {file_path}")
                         
                 except Exception as e:
                     failed_files.append((file_name, str(e)))
@@ -146,22 +146,22 @@ class PushAgent:
                         pushed_files
                     )
                     
-                    result_message = f"✅ Successfully pushed {len(pushed_files)} file(s) to branch `{branch_name}`\n\n"
-                    result_message += f"📝 Files modified:\n" + "\n".join([f"  - {f}" for f in pushed_files])
+                    result_message = f"Successfully pushed {len(pushed_files)} file(s) to branch `{branch_name}`\n\n"
+                    result_message += f"Files modified:\n" + "\n".join([f"  - {f}" for f in pushed_files])
                     
                     if pr_result:
                         result_message += f"\n\n{pr_result}"
                     
                     if failed_files:
-                        result_message += f"\n\n⚠️ Failed files ({len(failed_files)}):\n"
+                        result_message += f"\n\nFailed files ({len(failed_files)}):\n"
                         result_message += "\n".join([f"  - {f}: {err}" for f, err in failed_files])
                     
                     return result_message
                     
                 except Exception as pr_error:
-                    return f"✅ Files pushed to branch `{branch_name}`, but PR creation failed: {str(pr_error)}\n\nYou can manually create a PR from the GitHub UI."
+                    return f"Files pushed to branch `{branch_name}`, but PR creation failed: {str(pr_error)}\n\nYou can manually create a PR from the GitHub UI."
             else:
-                return f"❌ No files were successfully pushed. Errors:\n" + "\n".join([f"- {f}: {err}" for f, err in failed_files])
+                return f"No files were successfully pushed. Errors:\n" + "\n".join([f"- {f}: {err}" for f, err in failed_files])
         
         except Exception as e:
             raise Exception(f"GitHub push failed: {str(e)}")
@@ -199,7 +199,7 @@ class PushAgent:
                 base=base_branch
             )
             
-            return f"🎉 Pull Request created: {pr.html_url}"
+            return f"Pull Request created: {pr.html_url}"
             
         except Exception as e:
             # If PR creation fails, at least the branch exists
@@ -216,6 +216,6 @@ class PushAgent:
         files = self.extract_files_from_response(ai_response)
         
         if not files:
-            return "⚠️ No recognizable source files found in the AI response."
+            return "No recognizable source files found in the AI response."
         
         return self.push_to_github(repo_name, files, commit_message, original_paths)

@@ -1,13 +1,551 @@
-from langchain_google_vertexai import VertexAI
+from langchain_google_vertexai import VertexAI, VertexAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 import streamlit as st
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any, Set
 from utils.llm_normalizer import LLMOutputNormalizer, CodeExtractor
 import re
 import json
 import os
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from dataclasses import dataclass
+from enum import Enum
 
+
+# ================================
+# OVERVIEW AGENT COMPONENTS
+# ================================
+
+class QueryType(Enum):
+    """Types of questions the agent can handle."""
+    SPECIFIC_FILE = "specific_file"
+    FUNCTIONALITY = "functionality"
+    ARCHITECTURE = "architecture"
+    TECHNICAL_DETAIL = "technical_detail"
+    CODE_SEARCH = "code_search"
+    COMPARISON = "comparison"
+    GENERAL_OVERVIEW = "general_overview"
+
+
+@dataclass
+class RelevantFile:
+    """Container for relevant file information."""
+    path: str
+    content: str
+    relevance_score: float
+    excerpt: str
+
+
+class QueryRouter:
+    """Routes queries to appropriate handling strategies."""
+    
+    def __init__(self, llm: VertexAI):
+        self.llm = llm
+    
+    def classify_query(self, question: str, available_files: List[str]) -> Tuple[QueryType, Dict[str, Any]]:
+        """Classify the user's question and extract metadata."""
+        
+        question_lower = question.lower()
+        metadata = {"original_question": question}
+        
+        # Pattern matching for quick classification
+        if any(keyword in question_lower for keyword in ["what does", "explain", "describe"]) and \
+           any(f.lower() in question_lower for f in available_files):
+            # Specific file question
+            mentioned_file = next((f for f in available_files if f.lower() in question_lower), None)
+            if mentioned_file:
+                metadata["target_file"] = mentioned_file
+                return QueryType.SPECIFIC_FILE, metadata
+        
+        if any(keyword in question_lower for keyword in ["structure", "architecture", "organized", "layout"]):
+            return QueryType.ARCHITECTURE, metadata
+        
+        if any(keyword in question_lower for keyword in ["how does", "how is", "workflow", "process"]):
+            return QueryType.FUNCTIONALITY, metadata
+        
+        if any(keyword in question_lower for keyword in ["show me", "find", "where is", "list"]):
+            return QueryType.CODE_SEARCH, metadata
+        
+        if any(keyword in question_lower for keyword in ["difference", "compare", "versus", "vs"]):
+            return QueryType.COMPARISON, metadata
+        
+        if any(keyword in question_lower for keyword in ["database", "api", "framework", "library", "technology"]):
+            return QueryType.TECHNICAL_DETAIL, metadata
+        
+        return QueryType.GENERAL_OVERVIEW, metadata
+
+
+class VectorSearchEngine:
+    """Handles vector similarity search across repository files."""
+    
+    def __init__(self, embedding_model: Optional[VertexAIEmbeddings]):
+        self.embedding_model = embedding_model
+    
+    def search_relevant_files(
+        self,
+        query: str,
+        repo_data: Dict[str, str],
+        vector_store: Optional[Any],
+        top_k: int = 5,
+        min_score: float = 0.3
+    ) -> List[RelevantFile]:
+        """Search for files relevant to the query using vector similarity."""
+        
+        if not self.embedding_model:
+            return self._keyword_search(query, repo_data, top_k)
+        
+        try:
+            query_embedding = self.embedding_model.embed_query(query)
+            results = []
+            
+            for file_path, content in repo_data.items():
+                try:
+                    file_embedding = self.embedding_model.embed_query(content[:2000])
+                    query_array = np.array(query_embedding).reshape(1, -1)
+                    file_array = np.array(file_embedding).reshape(1, -1)
+                    similarity = cosine_similarity(query_array, file_array)[0][0]
+                    
+                    if similarity >= min_score:
+                        excerpt = self._extract_relevant_excerpt(query, content)
+                        results.append(RelevantFile(
+                            path=file_path,
+                            content=content,
+                            relevance_score=similarity,
+                            excerpt=excerpt
+                        ))
+                except Exception:
+                    continue
+            
+            results.sort(key=lambda x: x.relevance_score, reverse=True)
+            return results[:top_k]
+            
+        except Exception:
+            return self._keyword_search(query, repo_data, top_k)
+    
+    def _keyword_search(self, query: str, repo_data: Dict[str, str], top_k: int) -> List[RelevantFile]:
+        """Fallback keyword-based search."""
+        keywords = set(query.lower().split())
+        results = []
+        
+        for file_path, content in repo_data.items():
+            content_lower = content.lower()
+            matches = sum(1 for kw in keywords if kw in content_lower)
+            
+            if matches > 0:
+                score = matches / len(keywords)
+                excerpt = self._extract_relevant_excerpt(query, content)
+                results.append(RelevantFile(
+                    path=file_path,
+                    content=content,
+                    relevance_score=score,
+                    excerpt=excerpt
+                ))
+        
+        results.sort(key=lambda x: x.relevance_score, reverse=True)
+        return results[:top_k]
+    
+    def _extract_relevant_excerpt(self, query: str, content: str, context_lines: int = 5) -> str:
+        """Extract a relevant excerpt from the content."""
+        lines = content.split('\n')
+        query_keywords = set(query.lower().split())
+        
+        scored_lines = []
+        for idx, line in enumerate(lines):
+            line_lower = line.lower()
+            matches = sum(1 for kw in query_keywords if kw in line_lower)
+            if matches > 0:
+                scored_lines.append((idx, matches))
+        
+        if not scored_lines:
+            return '\n'.join(lines[:10])
+        
+        best_idx = max(scored_lines, key=lambda x: x[1])[0]
+        start = max(0, best_idx - context_lines)
+        end = min(len(lines), best_idx + context_lines + 1)
+        
+        excerpt = '\n'.join(lines[start:end])
+        return excerpt[:500]
+
+
+class RepositoryAnalyzer:
+    """Analyzes repository structure and content."""
+    
+    def analyze_structure(self, repo_data: Dict[str, str]) -> Dict[str, Any]:
+        """Analyze the repository structure."""
+        
+        structure = {
+            "total_files": len(repo_data),
+            "directories": set(),
+            "file_types": {},
+            "key_files": [],
+            "languages": set()
+        }
+        
+        for file_path in repo_data.keys():
+            if '/' in file_path:
+                directory = '/'.join(file_path.split('/')[:-1])
+                structure["directories"].add(directory)
+            
+            if '.' in file_path:
+                ext = file_path.split('.')[-1]
+                structure["file_types"][ext] = structure["file_types"].get(ext, 0) + 1
+                
+                lang_map = {
+                    'py': 'Python', 'js': 'JavaScript', 'ts': 'TypeScript',
+                    'java': 'Java', 'cpp': 'C++', 'c': 'C', 'go': 'Go',
+                    'rb': 'Ruby', 'php': 'PHP', 'swift': 'Swift'
+                }
+                if ext in lang_map:
+                    structure["languages"].add(lang_map[ext])
+            
+            basename = file_path.split('/')[-1].lower()
+            if basename in ['readme.md', 'main.py', 'app.py', 'index.js', 'index.html',
+                           'requirements.txt', 'package.json', 'dockerfile', 'makefile']:
+                structure["key_files"].append(file_path)
+        
+        structure["directories"] = sorted(list(structure["directories"]))
+        structure["languages"] = sorted(list(structure["languages"]))
+        
+        return structure
+
+
+class ResponseGenerator:
+    """Generates comprehensive responses using LLM."""
+    
+    def __init__(self, llm: VertexAI):
+        self.llm = llm
+    
+    def generate_specific_file_answer(
+        self,
+        question: str,
+        file_path: str,
+        file_content: str
+    ) -> str:
+        """Answer questions about a specific file."""
+        
+        prompt = f"""You are a code expert analyzing a specific file.
+
+**User Question:** {question}
+
+**File:** {file_path}
+
+**File Content:**
+```
+{file_content[:4000]}
+```
+
+Provide a clear, detailed explanation that directly answers the user's question.
+Focus on:
+- What the file does
+- Key functions/classes
+- How it fits into the larger project
+- Any important patterns or techniques used
+
+Keep your response conversational and well-structured."""
+
+        return self._invoke_llm(prompt)
+    
+    def generate_functionality_answer(
+        self,
+        question: str,
+        relevant_files: List[RelevantFile]
+    ) -> str:
+        """Explain how specific functionality works."""
+        
+        context = self._build_context_from_files(relevant_files)
+        
+        prompt = f"""You are a code expert explaining how functionality works in a codebase.
+
+**User Question:** {question}
+
+**Relevant Code Context:**
+{context}
+
+Explain the functionality by:
+1. Describing the overall workflow
+2. Identifying the key components involved
+3. Explaining how they interact
+4. Noting any important patterns or design decisions
+
+Be specific and reference the actual code when relevant."""
+
+        return self._invoke_llm(prompt)
+    
+    def generate_architecture_answer(
+        self,
+        question: str,
+        structure: Dict[str, Any],
+        repo_data: Dict[str, str]
+    ) -> str:
+        """Explain the project architecture."""
+        
+        key_files_content = ""
+        for key_file in structure.get("key_files", [])[:3]:
+            if key_file in repo_data:
+                key_files_content += f"\n**{key_file}:**\n{repo_data[key_file][:500]}\n"
+        
+        prompt = f"""You are a software architect explaining project structure.
+
+**User Question:** {question}
+
+**Project Structure:**
+- Total Files: {structure['total_files']}
+- Languages: {', '.join(structure['languages']) if structure['languages'] else 'Unknown'}
+- Main Directories: {', '.join(structure['directories'][:10])}
+- File Types: {structure['file_types']}
+
+**Key Files:**
+{key_files_content}
+
+Explain the architecture by:
+1. Describing the overall organization
+2. Identifying the main modules/components
+3. Explaining the technology stack
+4. Noting any architectural patterns
+
+Be comprehensive but concise."""
+
+        return self._invoke_llm(prompt)
+    
+    def generate_code_search_answer(
+        self,
+        question: str,
+        relevant_files: List[RelevantFile]
+    ) -> str:
+        """Answer code search queries."""
+        
+        findings = ""
+        for file in relevant_files:
+            findings += f"\n**{file.path}** (relevance: {file.relevance_score:.2%})\n"
+            findings += f"```\n{file.excerpt}\n```\n"
+        
+        prompt = f"""You are a code expert helping locate specific code.
+
+**User Question:** {question}
+
+**Search Results:**
+{findings}
+
+Provide:
+1. Direct answers showing where the requested code is
+2. Brief explanations of what you found
+3. How these pieces work together (if applicable)
+
+Be specific and reference file paths."""
+
+        return self._invoke_llm(prompt)
+    
+    def generate_general_overview(
+        self,
+        question: str,
+        structure: Dict[str, Any],
+        repo_data: Dict[str, str]
+    ) -> str:
+        """Generate a general repository overview."""
+        
+        readme_content = ""
+        for file_path, content in repo_data.items():
+            if 'readme' in file_path.lower():
+                readme_content = content[:1500]
+                break
+        
+        main_files_sample = ""
+        for key_file in structure.get("key_files", [])[:2]:
+            if key_file in repo_data:
+                main_files_sample += f"\n**{key_file}:**\n{repo_data[key_file][:300]}\n"
+        
+        prompt = f"""You are a code expert providing a repository overview.
+
+**User Question:** {question}
+
+**Repository Info:**
+- Files: {structure['total_files']}
+- Languages: {', '.join(structure['languages']) if structure['languages'] else 'Unknown'}
+- Structure: {', '.join(structure['directories'][:8])}
+
+**README:**
+{readme_content if readme_content else "No README found"}
+
+**Sample Code:**
+{main_files_sample}
+
+Provide a comprehensive overview covering:
+1. What this project does (purpose)
+2. Main technologies used
+3. Key components/modules
+4. Overall architecture approach
+
+Be informative and well-organized."""
+
+        return self._invoke_llm(prompt)
+    
+    def _build_context_from_files(self, files: List[RelevantFile], max_chars: int = 3000) -> str:
+        """Build context string from relevant files."""
+        context_parts = []
+        current_length = 0
+        
+        for file in files:
+            file_context = f"**{file.path}** (relevance: {file.relevance_score:.2%})\n```\n{file.excerpt}\n```\n"
+            
+            if current_length + len(file_context) > max_chars:
+                break
+            
+            context_parts.append(file_context)
+            current_length += len(file_context)
+        
+        return "\n".join(context_parts)
+    
+    def _invoke_llm(self, prompt: str) -> str:
+        """Invoke LLM and normalize response."""
+        try:
+            raw = self.llm.invoke(prompt)
+            
+            if isinstance(raw, list) and len(raw) > 0:
+                item = raw[0]
+                return item.get("text", str(item)) if isinstance(item, dict) else str(item)
+            elif isinstance(raw, dict):
+                return raw.get("text", str(raw))
+            elif hasattr(raw, "text"):
+                return raw.text
+            else:
+                return str(raw)
+        except Exception as e:
+            return f"Error generating response: {str(e)}"
+
+
+class OverviewAgent:
+    """Main agent for handling repository overview and Q&A."""
+    
+    def __init__(self):
+        self.llm = VertexAI(
+            model_name="gemini-2.0-flash-exp",
+            temperature=0.3,
+            max_output_tokens=4000
+        )
+        
+        try:
+            self.embedding_model = VertexAIEmbeddings(model_name="text-embedding-004")
+        except Exception:
+            self.embedding_model = None
+        
+        self.query_router = QueryRouter(self.llm)
+        self.vector_search = VectorSearchEngine(self.embedding_model)
+        self.analyzer = RepositoryAnalyzer()
+        self.response_generator = ResponseGenerator(self.llm)
+    
+    def run(self, user_question: str, repo_data: Dict[str, str] = None) -> str:
+        """
+        Main entry point for the overview agent.
+        
+        Args:
+            user_question: The user's question about the repository
+            repo_data: Optional repository data dict. If not provided, 
+                      will try to get from st.session_state
+        
+        Returns:
+            str: The agent's response
+        """
+        # Get repo_data from parameter or session state
+        if repo_data is None:
+            repo_data = st.session_state.get("repo_data", {})
+        
+        vector_store = st.session_state.get("vector_store")
+        
+        if not repo_data:
+            return "No repository loaded. Please load a repository first."
+        
+        # Classify the query
+        query_type, metadata = self.query_router.classify_query(
+            user_question,
+            list(repo_data.keys())
+        )
+        
+        st.info(f"**Query Type:** {query_type.value.replace('_', ' ').title()}")
+        
+        # Route to appropriate handler
+        if query_type == QueryType.SPECIFIC_FILE:
+            target_file = metadata.get("target_file")
+            if target_file and target_file in repo_data:
+                return self.response_generator.generate_specific_file_answer(
+                    user_question,
+                    target_file,
+                    repo_data[target_file]
+                )
+            else:
+                return "Could not find the specified file in the repository."
+        
+        elif query_type == QueryType.ARCHITECTURE:
+            structure = self.analyzer.analyze_structure(repo_data)
+            return self.response_generator.generate_architecture_answer(
+                user_question,
+                structure,
+                repo_data
+            )
+        
+        elif query_type == QueryType.FUNCTIONALITY:
+            relevant_files = self.vector_search.search_relevant_files(
+                user_question,
+                repo_data,
+                vector_store,
+                top_k=5
+            )
+            
+            if not relevant_files:
+                return "Could not find relevant files for this functionality question."
+            
+            return self.response_generator.generate_functionality_answer(
+                user_question,
+                relevant_files
+            )
+        
+        elif query_type == QueryType.CODE_SEARCH:
+            relevant_files = self.vector_search.search_relevant_files(
+                user_question,
+                repo_data,
+                vector_store,
+                top_k=7
+            )
+            
+            if not relevant_files:
+                return "Could not find code matching your search."
+            
+            return self.response_generator.generate_code_search_answer(
+                user_question,
+                relevant_files
+            )
+        
+        elif query_type == QueryType.GENERAL_OVERVIEW:
+            structure = self.analyzer.analyze_structure(repo_data)
+            return self.response_generator.generate_general_overview(
+                user_question,
+                structure,
+                repo_data
+            )
+        
+        else:
+            # Default fallback behavior
+            relevant_files = self.vector_search.search_relevant_files(
+                user_question,
+                repo_data,
+                vector_store,
+                top_k=5
+            )
+            
+            if relevant_files:
+                return self.response_generator.generate_functionality_answer(
+                    user_question,
+                    relevant_files
+                )
+            else:
+                structure = self.analyzer.analyze_structure(repo_data)
+                return self.response_generator.generate_general_overview(
+                    user_question,
+                    structure,
+                    repo_data
+                )
+
+########Refactor##################
 
 class FileOperation(BaseModel):
     """Represents a file operation."""
@@ -205,7 +743,7 @@ Return ONLY the JSON object."""
             structure_hint=structure_hint,
         )
 
-        st.info("🧠 Analyzing file operations needed...")
+        st.info("Analyzing file operations needed...")
         try:
             raw = self.model.invoke(prompt_text)
             raw_str = str(raw)
@@ -219,7 +757,7 @@ Return ONLY the JSON object."""
                 raise ValueError("Could not extract valid JSON")
                 
         except Exception as e:
-            st.warning(f"⚠️ AI analysis failed: {e}. Using fallback detection.")
+            st.warning(f"AI analysis failed: {e}. Using fallback detection.")
             return self._fallback_file_extraction("", user_question, all_files)
 
     def _fallback_file_extraction(self, response_text: str, user_question: str, all_files: List[str]) -> Dict:
@@ -575,7 +1113,7 @@ REFACTORED CODE FOR {file_path}:"""
         operations = request_analysis.get("file_operations", [])
         
         if not operations:
-            st.error("❌ No file operations identified.")
+            st.error("No file operations identified.")
             return {}
 
         # Categorize operations
@@ -585,7 +1123,7 @@ REFACTORED CODE FOR {file_path}:"""
         renames = [op for op in operations if op['operation'] == 'rename']
 
         # Display plan
-        st.success(f"📋 **File Operation Plan**")
+        st.success(f"**File Operation Plan**")
         
         if creates:
             st.write(f"✨ **Create** ({len(creates)} file(s)):")
@@ -593,17 +1131,17 @@ REFACTORED CODE FOR {file_path}:"""
                 st.write(f"   • {op['file_path']}")
         
         if modifies:
-            st.write(f"📝 **Modify** ({len(modifies)} file(s)):")
+            st.write(f"**Modify** ({len(modifies)} file(s)):")
             for op in modifies:
                 st.write(f"   • {op['file_path']}")
         
         if deletes:
-            st.write(f"🗑️ **Delete** ({len(deletes)} file(s)):")
+            st.write(f"**Delete** ({len(deletes)} file(s)):")
             for op in deletes:
                 st.write(f"   • {op['file_path']}")
         
         if renames:
-            st.write(f"📦 **Rename** ({len(renames)} file(s)):")
+            st.write(f"**Rename** ({len(renames)} file(s)):")
             for op in renames:
                 st.write(f"   • {op['file_path']} → {op.get('new_path', '???')}")
 
@@ -628,7 +1166,7 @@ REFACTORED CODE FOR {file_path}:"""
             new_path = op.get('new_path')
             
             if not new_path:
-                st.error(f"❌ Rename missing new_path for {old_path}")
+                st.error(f"Rename missing new_path for {old_path}")
                 continue
                 
             st.info(f"📦 Renaming ({idx}/{len(renames)}): **{old_path}** → **{new_path}**")
@@ -637,14 +1175,14 @@ REFACTORED CODE FOR {file_path}:"""
                 results[new_path] = repo_data[old_path]
                 results[old_path] = None
                 successful_operations += 1
-                st.success(f"✅ {old_path} → {new_path}")
+                st.success(f"{old_path} → {new_path}")
             else:
-                st.error(f"❌ {old_path} - File not found")
+                st.error(f"{old_path} - File not found")
 
         # 3. Handle CREATES
         for idx, op in enumerate(creates, 1):
             file_path = op['file_path']
-            st.info(f"✨ Creating ({idx}/{len(creates)}): **{file_path}**")
+            st.info(f"Creating ({idx}/{len(creates)}): **{file_path}**")
 
             lang, _ = self._get_file_info(file_path)
 
@@ -669,9 +1207,9 @@ REFACTORED CODE FOR {file_path}:"""
                 if is_valid:
                     results[file_path] = cleaned_content
                     successful_operations += 1
-                    st.success(f"✅ {file_path} - Created")
+                    st.success(f"{file_path} - Created")
                 else:
-                    st.warning(f"⚠️ {file_path} - Issue: {reason}. Retrying...")
+                    st.warning(f"{file_path} - Issue: {reason}. Retrying...")
                     
                     retry_prompt = f"""PREVIOUS ATTEMPT FAILED: {reason}
 
@@ -691,22 +1229,22 @@ CRITICAL: Create ONLY the file {file_path}. Do NOT include any other files.
                     if retry_valid:
                         results[file_path] = retry_cleaned
                         successful_operations += 1
-                        st.success(f"✅ {file_path} - Retry successful")
+                        st.success(f"{file_path} - Retry successful")
                     else:
-                        st.error(f"❌ {file_path} - Retry failed: {retry_reason}")
+                        st.error(f"{file_path} - Retry failed: {retry_reason}")
 
             except Exception as e:
-                st.error(f"❌ Error creating {file_path}: {str(e)}")
+                st.error(f"Error creating {file_path}: {str(e)}")
 
         # 4. Handle MODIFIES
         for idx, op in enumerate(modifies, 1):
             file_path = op['file_path']
             
             if file_path not in repo_data:
-                st.warning(f"⚠️ {file_path} - File not found, skipping")
+                st.warning(f"{file_path} - File not found, skipping")
                 continue
                 
-            st.info(f"🔄 Modifying ({idx}/{len(modifies)}): **{file_path}**")
+            st.info(f"Modifying ({idx}/{len(modifies)}): **{file_path}**")
 
             original_content = repo_data[file_path]
             lang, _ = self._get_file_info(file_path)
@@ -733,9 +1271,9 @@ CRITICAL: Create ONLY the file {file_path}. Do NOT include any other files.
                 if is_valid:
                     results[file_path] = cleaned_content
                     successful_operations += 1
-                    st.success(f"✅ {file_path} - Modified")
+                    st.success(f"{file_path} - Modified")
                 else:
-                    st.warning(f"⚠️ {file_path} - Issue: {reason}. Retrying...")
+                    st.warning(f"{file_path} - Issue: {reason}. Retrying...")
                     
                     retry_prompt = f"""PREVIOUS ATTEMPT FAILED: {reason}
 
@@ -756,27 +1294,27 @@ Make substantial functional changes to THIS FILE ONLY.
                     if retry_valid:
                         results[file_path] = retry_cleaned
                         successful_operations += 1
-                        st.success(f"✅ {file_path} - Retry successful")
+                        st.success(f"{file_path} - Retry successful")
                     else:
-                        st.error(f"❌ {file_path} - Retry failed: {retry_reason}")
+                        st.error(f"{file_path} - Retry failed: {retry_reason}")
                         results[file_path] = original_content
 
             except Exception as e:
-                st.error(f"❌ Error modifying {file_path}: {str(e)}")
+                st.error(f"Error modifying {file_path}: {str(e)}")
                 results[file_path] = original_content
 
         # Summary
         total_expected = len(operations)
         if successful_operations == 0:
-            st.error("❌ No file operations completed successfully.")
-            st.info("💡 Try being more specific about the changes needed.")
+            st.error("No file operations completed successfully.")
+            st.info("Try being more specific about the changes needed.")
         else:
             st.success(f"🎉 Successfully completed {successful_operations}/{total_expected} operation(s)")
             
             # Show import guidance for Python projects
             python_files_created = [op['file_path'] for op in creates if op['file_path'].endswith('.py')]
             if python_files_created:
-                st.info("📦 **Import Guide for New Python Files:**")
+                st.info("**Import Guide for New Python Files:**")
                 for file_path in python_files_created:
                     import_path = self._get_python_import_path(file_path)
                     st.code(f"from {import_path} import ...")
